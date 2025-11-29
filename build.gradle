@@ -58,7 +58,6 @@ idea.project.settings.runConfigurations {
         mainClass = 'com.hypixel.hytale.Main'
         moduleName = project.idea.module.name + '.main'
         programParameters = "--allow-op --assets=$userHome/AppData/Roaming/Hytale/install/release/package/game/latest/Assets --packs=$userHome/AppData/Roaming/Hytale/UserData/Packs"
-        jvmArgs = '-Xmx1G'
         workingDirectory = serverRunDir.absolutePath
     }
 }
