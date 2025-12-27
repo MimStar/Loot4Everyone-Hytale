@@ -60,7 +60,7 @@ idea.project.settings.runConfigurations {
         moduleName = project.idea.module.name + '.main'
         programParameters = "--allow-op --assets=$hytaleHome/$patchline/package/game/latest/Assets.zip"
         if (includes_pack) {
-            programParameters += " --packs=${sourceSets.main.java.srcDirs.first().parentFile.absolutePath}"
+            programParameters += " --mods=${sourceSets.main.java.srcDirs.first().parentFile.absolutePath}"
         }
         workingDirectory = serverRunDir.absolutePath
     }
