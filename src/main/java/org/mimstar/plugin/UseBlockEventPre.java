@@ -40,6 +40,7 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
 
                 if (!itemContainerState.getWindows().isEmpty()){
                     useBlockEventPre.setCancelled(true);
+                    return;
                 }
 
                 OpenedContainerComponent monitor = new OpenedContainerComponent(target.getX(), target.getY(), target.getZ());
