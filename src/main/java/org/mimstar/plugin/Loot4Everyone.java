@@ -100,14 +100,21 @@ public class Loot4Everyone extends JavaPlugin {
 
         @Override
         public void onEntityAdded(@NonNullDecl Ref<ChunkStore> ref, @NonNullDecl AddReason addReason, @NonNullDecl Store<ChunkStore> store, @NonNullDecl CommandBuffer<ChunkStore> commandBuffer) {
-           ItemContainerState itemContainerState = (ItemContainerState) store.getComponent(ref, this.componentType);
-            if (itemContainerState.getDroplist() != null){
+            ItemContainerState itemContainerState = store.getComponent(ref, this.componentType);
 
+            if (itemContainerState != null && itemContainerState.getDroplist() != null) {
                 LootChestTemplate lootChestTemplate = commandBuffer.getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
-                List<ItemStack> items = new ArrayList<>();
+                if (lootChestTemplate != null) {
+                    int x = itemContainerState.getBlockX();
+                    int y = itemContainerState.getBlockY();
+                    int z = itemContainerState.getBlockZ();
 
-                lootChestTemplate.saveTemplate(itemContainerState.getBlockX(), itemContainerState.getBlockY(), itemContainerState.getBlockZ(), items);
+                    if (!lootChestTemplate.hasTemplate(x, y, z)) {
+                        List<ItemStack> items = new ArrayList<>();
+                        lootChestTemplate.saveTemplate(x, y, z, items);
+                    }
+                }
             }
         }
 

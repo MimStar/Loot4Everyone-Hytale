@@ -25,12 +25,18 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
                        @NonNullDecl Store<EntityStore> store,
                        @NonNullDecl CommandBuffer<EntityStore> commandBuffer,
                        @NonNullDecl DamageBlockEvent damageBlockEvent) {
-        Player player = archetypeChunk.getComponent(index,Player.getComponentType());
+
+        Player player = archetypeChunk.getComponent(index, Player.getComponentType());
+        if (player == null) return;
+
         Vector3i target = damageBlockEvent.getTargetBlock();
-        BlockState blockType = player.getWorld().getState(target.getX(),target.getY(),target.getZ(),true);
-        if (blockType instanceof ItemContainerState itemContainerState){
-            LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
-            if (lootChestTemplate != null && lootChestTemplate.hasTemplate(target.getX(),target.getY(),target.getZ())) {
+        BlockState blockType = player.getWorld().getState(target.getX(), target.getY(), target.getZ(), true);
+
+        if (blockType instanceof ItemContainerState itemContainerState) {
+            LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore()
+                    .getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
+
+            if (lootChestTemplate != null && lootChestTemplate.hasTemplate(target.getX(), target.getY(), target.getZ())) {
                 damageBlockEvent.setCancelled(true);
             }
         }
@@ -38,6 +44,6 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
 
     @Override
     public Query<EntityStore> getQuery() {
-        return Archetype.empty();
+        return Player.getComponentType();
     }
 }

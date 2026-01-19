@@ -25,12 +25,15 @@ public class BreakBlockEventListener extends EntityEventSystem<EntityStore, Brea
                        @NonNullDecl Store<EntityStore> store,
                        @NonNullDecl CommandBuffer<EntityStore> commandBuffer,
                        @NonNullDecl BreakBlockEvent breakBlockEvent) {
-        Player player = archetypeChunk.getComponent(index,Player.getComponentType());
+
+        Player player = archetypeChunk.getComponent(index, Player.getComponentType());
+        if (player == null) return;
+
         Vector3i target = breakBlockEvent.getTargetBlock();
-        BlockState blockType = player.getWorld().getState(target.getX(),target.getY(),target.getZ(),true);
-        if (blockType instanceof ItemContainerState itemContainerState){
+        BlockState blockType = player.getWorld().getState(target.getX(), target.getY(), target.getZ(), true);
+        if (blockType instanceof ItemContainerState itemContainerState) {
             LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
-            if (lootChestTemplate != null && lootChestTemplate.hasTemplate(target.getX(),target.getY(),target.getZ())) {
+            if (lootChestTemplate != null && lootChestTemplate.hasTemplate(target.getX(), target.getY(), target.getZ())) {
                 breakBlockEvent.setCancelled(true);
             }
         }
@@ -38,6 +41,6 @@ public class BreakBlockEventListener extends EntityEventSystem<EntityStore, Brea
 
     @Override
     public Query<EntityStore> getQuery() {
-        return Archetype.empty();
+        return Player.getComponentType();
     }
 }

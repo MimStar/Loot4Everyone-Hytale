@@ -10,9 +10,9 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerLoot implements Component<EntityStore> {
 
@@ -20,19 +20,19 @@ public class PlayerLoot implements Component<EntityStore> {
                     PlayerLoot.class,
                     PlayerLoot::new
             )
-            .addField(new KeyedCodec<>("Templates",new MapCodec<>(Codec.STRING, HashMap::new)),
-                    (data, value) -> data.lootData = new HashMap<>(value),
+            .addField(new KeyedCodec<>("Templates", new MapCodec<>(Codec.STRING, ConcurrentHashMap::new)),
+                    (data, value) -> data.lootData = new ConcurrentHashMap<>(value),
                     data -> data.lootData)
             .build();
 
     private Map<String, String> lootData;
 
     public PlayerLoot() {
-        this.lootData = new HashMap<>();
+        this.lootData = new ConcurrentHashMap<>();
     }
 
     public PlayerLoot(PlayerLoot other) {
-        this.lootData = new HashMap<>(other.lootData);
+        this.lootData = new ConcurrentHashMap<>(other.lootData);
     }
 
     @Nullable

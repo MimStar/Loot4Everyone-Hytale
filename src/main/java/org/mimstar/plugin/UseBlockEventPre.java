@@ -77,6 +77,6 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
 
     @Override
     public Query<EntityStore> getQuery() {
-        return Archetype.empty();
+        return Player.getComponentType();
     }
 }

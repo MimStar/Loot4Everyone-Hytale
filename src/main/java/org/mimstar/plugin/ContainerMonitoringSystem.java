@@ -42,10 +42,10 @@ public class ContainerMonitoringSystem extends EntityTickingSystem<EntityStore> 
         }
 
         if (!stillOpen) {
-            PlayerLoot playerLoot = store.getComponent(playerRef,Loot4Everyone.get().getPlayerLootcomponentType());
-            if (blockState instanceof ItemContainerState itemContainerState){
+            PlayerLoot playerLoot = store.getComponent(playerRef, Loot4Everyone.get().getPlayerLootcomponentType());
+            if (blockState instanceof ItemContainerState itemContainerState && playerLoot != null) {
                 List<ItemStack> items = new ArrayList<>();
-                for (int i = 0; i < itemContainerState.getItemContainer().getCapacity(); i++){
+                for (int i = 0; i < itemContainerState.getItemContainer().getCapacity(); i++) {
                     items.add(itemContainerState.getItemContainer().getItemStack((short) i));
                 }
                 playerLoot.setInventory(monitor.getX(), monitor.getY(), monitor.getZ(), items);
