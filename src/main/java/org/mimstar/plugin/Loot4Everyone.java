@@ -50,6 +50,7 @@ public class Loot4Everyone extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new UseBlockEventPre());
         this.getEntityStoreRegistry().registerSystem(new BreakBlockEventListener());
         this.getEntityStoreRegistry().registerSystem(new DamageBlockEventListener());
+        this.getEntityStoreRegistry().registerSystem(new PlaceBlockEventListener());
         this.containerComponentType = this.getEntityStoreRegistry()
                 .registerComponent(OpenedContainerComponent.class, OpenedContainerComponent::new);
 
