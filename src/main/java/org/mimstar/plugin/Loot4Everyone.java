@@ -50,21 +50,25 @@ public class Loot4Everyone extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new UseBlockEventPre());
         this.getEntityStoreRegistry().registerSystem(new BreakBlockEventListener());
         this.getEntityStoreRegistry().registerSystem(new DamageBlockEventListener());
-
         this.containerComponentType = this.getEntityStoreRegistry()
                 .registerComponent(OpenedContainerComponent.class, OpenedContainerComponent::new);
 
         this.getEntityStoreRegistry().registerSystem(new ContainerMonitoringSystem(this.containerComponentType));
 
-        this.lootChestTemplateComponentType = this.getChunkStoreRegistry().registerResource(LootChestTemplate.class,"LootChestTemplate", LootChestTemplate.CODEC);
+        this.lootChestTemplateComponentType = this.getChunkStoreRegistry().registerResource(LootChestTemplate.class, "LootChestTemplate", LootChestTemplate.CODEC);
 
-        this.playerLootcomponentType = this.getEntityStoreRegistry().registerComponent(PlayerLoot.class,"PlayerLoot", PlayerLoot.CODEC);
+        this.playerLootcomponentType = this.getEntityStoreRegistry().registerComponent(PlayerLoot.class, "PlayerLoot", PlayerLoot.CODEC);
 
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, e -> {
-            Store<EntityStore> entityStore = e.getPlayerRef().getStore();
-            entityStore.ensureComponent(e.getPlayerRef(), getPlayerLootcomponentType());
-        });
 
+            var playerRef = e.getPlayerRef();
+            var world = e.getPlayer().getWorld();
+
+            world.execute(() -> {
+                Store<EntityStore> entityStore = playerRef.getStore();
+                entityStore.ensureComponent(playerRef, getPlayerLootcomponentType());
+            });
+        });
     }
 
     public ComponentType<EntityStore, OpenedContainerComponent> getContainerComponentType() {
@@ -96,14 +100,21 @@ public class Loot4Everyone extends JavaPlugin {
 
         @Override
         public void onEntityAdded(@NonNullDecl Ref<ChunkStore> ref, @NonNullDecl AddReason addReason, @NonNullDecl Store<ChunkStore> store, @NonNullDecl CommandBuffer<ChunkStore> commandBuffer) {
-           ItemContainerState itemContainerState = (ItemContainerState) store.getComponent(ref, this.componentType);
-            if (itemContainerState.getDroplist() != null){
+            ItemContainerState itemContainerState = store.getComponent(ref, this.componentType);
 
+            if (itemContainerState != null && itemContainerState.getDroplist() != null) {
                 LootChestTemplate lootChestTemplate = commandBuffer.getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
-                List<ItemStack> items = new ArrayList<>();
+                if (lootChestTemplate != null) {
+                    int x = itemContainerState.getBlockX();
+                    int y = itemContainerState.getBlockY();
+                    int z = itemContainerState.getBlockZ();
 
-                lootChestTemplate.saveTemplate(itemContainerState.getBlockX(), itemContainerState.getBlockY(), itemContainerState.getBlockZ(), items);
+                    if (!lootChestTemplate.hasTemplate(x, y, z)) {
+                        List<ItemStack> items = new ArrayList<>();
+                        lootChestTemplate.saveTemplate(x, y, z, items);
+                    }
+                }
             }
         }
 

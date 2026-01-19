@@ -11,29 +11,30 @@ import org.bson.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LootChestTemplate implements Resource<ChunkStore> {
 
+    // UPDATE: Use ConcurrentHashMap in the Codec definition
     public static final BuilderCodec<LootChestTemplate> CODEC = BuilderCodec.builder(
                     LootChestTemplate.class,
                     LootChestTemplate::new
             )
-            .addField(new KeyedCodec<>("Templates",new MapCodec<>(Codec.STRING, HashMap::new)),
-                (data, value) -> data.templates = new HashMap<>(value),
-                data -> data.templates)
+            .addField(new KeyedCodec<>("Templates", new MapCodec<>(Codec.STRING, ConcurrentHashMap::new)),
+                    (data, value) -> data.templates = new ConcurrentHashMap<>(value),
+                    data -> data.templates)
             .build();
 
     private Map<String, String> templates;
 
     public LootChestTemplate() {
-        this.templates = new HashMap<>();
+        this.templates = new ConcurrentHashMap<>();
     }
 
     public LootChestTemplate(LootChestTemplate other) {
-        this.templates = new HashMap<>(other.templates);
+        this.templates = new ConcurrentHashMap<>(other.templates);
     }
 
     @Nullable
