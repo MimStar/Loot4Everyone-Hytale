@@ -58,8 +58,13 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                 }
                 else{
                     PlayerLoot playerLoot = store.getComponent(playerRef,Loot4Everyone.get().getPlayerLootcomponentType());
-                    if (playerLoot != null && playerLoot.hasData(target.getX(), target.getY(), target.getZ())){
-                        List<ItemStack> items = playerLoot.getInventory(target.getX(), target.getY(), target.getZ());
+
+                    if (playerLoot != null && playerLoot.hasDeprecatedData(target.getX(), target.getY(), target.getZ())){
+                        playerLoot.replaceDeprecatedData(target.getX(), target.getY(), target.getZ(), player.getWorld().getName());
+                    }
+
+                    if (playerLoot != null && playerLoot.hasData(target.getX(), target.getY(), target.getZ(),player.getWorld().getName())){
+                        List<ItemStack> items = playerLoot.getInventory(target.getX(), target.getY(), target.getZ(),player.getWorld().getName());
                         for (int i = 0; i < itemContainerState.getItemContainer().getCapacity(); i++){
                             itemContainerState.getItemContainer().setItemStackForSlot((short) i, items.get(i));
                         }
