@@ -50,21 +50,25 @@ public class Loot4Everyone extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new UseBlockEventPre());
         this.getEntityStoreRegistry().registerSystem(new BreakBlockEventListener());
         this.getEntityStoreRegistry().registerSystem(new DamageBlockEventListener());
-
         this.containerComponentType = this.getEntityStoreRegistry()
                 .registerComponent(OpenedContainerComponent.class, OpenedContainerComponent::new);
 
         this.getEntityStoreRegistry().registerSystem(new ContainerMonitoringSystem(this.containerComponentType));
 
-        this.lootChestTemplateComponentType = this.getChunkStoreRegistry().registerResource(LootChestTemplate.class,"LootChestTemplate", LootChestTemplate.CODEC);
+        this.lootChestTemplateComponentType = this.getChunkStoreRegistry().registerResource(LootChestTemplate.class, "LootChestTemplate", LootChestTemplate.CODEC);
 
-        this.playerLootcomponentType = this.getEntityStoreRegistry().registerComponent(PlayerLoot.class,"PlayerLoot", PlayerLoot.CODEC);
+        this.playerLootcomponentType = this.getEntityStoreRegistry().registerComponent(PlayerLoot.class, "PlayerLoot", PlayerLoot.CODEC);
 
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, e -> {
-            Store<EntityStore> entityStore = e.getPlayerRef().getStore();
-            entityStore.ensureComponent(e.getPlayerRef(), getPlayerLootcomponentType());
-        });
 
+            var playerRef = e.getPlayerRef();
+            var world = e.getPlayer().getWorld();
+
+            world.execute(() -> {
+                Store<EntityStore> entityStore = playerRef.getStore();
+                entityStore.ensureComponent(playerRef, getPlayerLootcomponentType());
+            });
+        });
     }
 
     public ComponentType<EntityStore, OpenedContainerComponent> getContainerComponentType() {
