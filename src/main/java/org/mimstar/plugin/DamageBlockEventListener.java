@@ -44,6 +44,6 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
 
     @Override
     public Query<EntityStore> getQuery() {
-        return Player.getComponentType();
+        return Archetype.empty();
     }
 }

@@ -41,6 +41,6 @@ public class BreakBlockEventListener extends EntityEventSystem<EntityStore, Brea
 
     @Override
     public Query<EntityStore> getQuery() {
-        return Player.getComponentType();
+        return Archetype.empty();
     }
 }
