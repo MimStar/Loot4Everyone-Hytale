@@ -30,16 +30,48 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
         if (player == null) return;
 
         Vector3i target = damageBlockEvent.getTargetBlock();
-        BlockState blockType = player.getWorld().getState(target.getX(), target.getY(), target.getZ(), true);
+        if (isProtectedChest(player, target.getX(), target.getY(), target.getZ())) {
 
-        if (blockType instanceof ItemContainerState itemContainerState) {
+            LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
+
+            BlockState blockState = player.getWorld().getState(target.getX(), target.getY(), target.getZ(), true);
+
+            if (lootChestConfig != null && lootChestConfig.isCanPlayerBreakLootChests() && blockState instanceof ItemContainerState itemContainerState && itemContainerState.getWindows().isEmpty()){
+                return;
+            }
+
+            damageBlockEvent.setCancelled(true);
+            return;
+        }
+
+        if (isProtectedChest(player, target.getX(), target.getY() + 1, target.getZ())) {
+
+            LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
+
+            BlockState blockState = player.getWorld().getState(target.getX(), target.getY() + 1, target.getZ(), true);
+
+            if (lootChestConfig != null && lootChestConfig.isCanPlayerBreakLootChests() && blockState instanceof ItemContainerState itemContainerState && itemContainerState.getWindows().isEmpty()){
+                return;
+            }
+
+            damageBlockEvent.setCancelled(true);
+        }
+    }
+
+    /**
+     * Helper method to check if a specific block coordinate contains a protected Loot Chest.
+     */
+    private boolean isProtectedChest(Player player, int x, int y, int z) {
+
+        BlockState blockState = player.getWorld().getState(x, y, z, true);
+
+        if (blockState instanceof ItemContainerState itemContainerState) {
             LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore()
                     .getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
-            if (lootChestTemplate != null && lootChestTemplate.hasTemplate(target.getX(), target.getY(), target.getZ())) {
-                damageBlockEvent.setCancelled(true);
-            }
+            return lootChestTemplate != null && lootChestTemplate.hasTemplate(x, y, z);
         }
+        return false;
     }
 
     @Override

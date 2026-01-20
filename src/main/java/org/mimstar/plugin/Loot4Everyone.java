@@ -35,6 +35,8 @@ public class Loot4Everyone extends JavaPlugin {
 
     private ResourceType<ChunkStore, LootChestTemplate> lootChestTemplateComponentType;
 
+    private ResourceType<ChunkStore, LootChestConfig> lootChestConfigResourceType;
+
     private ComponentType<EntityStore, PlayerLoot> playerLootcomponentType;
 
     public Loot4Everyone(@Nonnull JavaPluginInit init) {
@@ -58,6 +60,8 @@ public class Loot4Everyone extends JavaPlugin {
 
         this.lootChestTemplateComponentType = this.getChunkStoreRegistry().registerResource(LootChestTemplate.class, "LootChestTemplate", LootChestTemplate.CODEC);
 
+        this.lootChestConfigResourceType = this.getChunkStoreRegistry().registerResource(LootChestConfig.class, "Loot_chest_config", LootChestConfig.CODEC);
+
         this.playerLootcomponentType = this.getEntityStoreRegistry().registerComponent(PlayerLoot.class, "PlayerLoot", PlayerLoot.CODEC);
 
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, e -> {
@@ -70,6 +74,8 @@ public class Loot4Everyone extends JavaPlugin {
                 entityStore.ensureComponent(playerRef, getPlayerLootcomponentType());
             });
         });
+
+        this.getCommandRegistry().registerCommand(new SetBreakRuleCommand());
     }
 
     public ComponentType<EntityStore, OpenedContainerComponent> getContainerComponentType() {
@@ -78,6 +84,10 @@ public class Loot4Everyone extends JavaPlugin {
 
     public ResourceType<ChunkStore, LootChestTemplate> getlootChestTemplateResourceType(){
         return lootChestTemplateComponentType;
+    }
+
+    public ResourceType<ChunkStore, LootChestConfig> getLootChestConfigResourceType() {
+        return lootChestConfigResourceType;
     }
 
     public ComponentType<EntityStore, PlayerLoot> getPlayerLootcomponentType(){
