@@ -1,15 +1,22 @@
 package org.mimstar.plugin.resources;
 
 import com.hypixel.hytale.codec.Codec;
+import com.hypixel.hytale.codec.ExtraInfo;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.codec.codecs.map.MapCodec;
+import com.hypixel.hytale.codec.schema.SchemaContext;
+import com.hypixel.hytale.codec.schema.config.ArraySchema;
+import com.hypixel.hytale.codec.schema.config.Schema;
+import com.hypixel.hytale.codec.util.RawJsonReader;
 import com.hypixel.hytale.component.Resource;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import org.bson.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,24 +24,117 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LootChestTemplate implements Resource<ChunkStore> {
 
-    // UPDATE: Use ConcurrentHashMap in the Codec definition
+    // --- 1. Data Object ---
+    public static class ChestData {
+        public List<ItemStack> items = new ArrayList<>();
+        public String dropList = "undefined";
+
+        public ChestData() {}
+
+        public ChestData(List<ItemStack> items, String dropList) {
+            this.items = items != null ? new ArrayList<>(items) : new ArrayList<>();
+            this.dropList = dropList != null ? dropList : "undefined";
+        }
+
+        public ChestData(ChestData other) {
+            this.items = new ArrayList<>(other.items);
+            this.dropList = other.dropList;
+        }
+
+        public static final Codec<ChestData> INTERNAL_CODEC = BuilderCodec.builder(ChestData.class, ChestData::new)
+                .addField(new KeyedCodec<>("Items", new ItemStackListCodec()), (d, v) -> d.items = v, d -> d.items)
+                .addField(new KeyedCodec<>("DropList", Codec.STRING), (d, v) -> d.dropList = v, d -> d.dropList)
+                .build();
+    }
+
+    //Migration Codec
+    public static class LegacyChestDataCodec implements Codec<ChestData> {
+
+        @Nonnull
+        @Override
+        public ChestData decode(@Nonnull BsonValue value, @Nonnull ExtraInfo extraInfo) {
+            if (value.isString()) {
+                return parseLegacyJson(value.asString().getValue());
+            } else if (value.isDocument()) {
+                return ChestData.INTERNAL_CODEC.decode(value, extraInfo);
+            }
+            return new ChestData();
+        }
+
+        @Nonnull
+        @Override
+        public ChestData decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
+            reader.consumeWhiteSpace();
+
+            if (reader.peekFor('"')) {
+                String jsonString = reader.readString();
+                return parseLegacyJson(jsonString);
+            }
+            else if (reader.peekFor('[')) {
+                List<ItemStack> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
+                return new ChestData(items, "undefined");
+            }
+            else {
+                return ChestData.INTERNAL_CODEC.decodeJson(reader, extraInfo);
+            }
+        }
+
+        private ChestData parseLegacyJson(String json) {
+            if (json == null || json.isEmpty()) return new ChestData();
+            try {
+                String trimmed = json.trim();
+                if (trimmed.startsWith("[")) {
+                    List<ItemStack> items = ItemStackListCodec.deserializeBsonArray(BsonArray.parse(json));
+                    return new ChestData(items, "undefined");
+                }
+                BsonDocument doc = BsonDocument.parse(json);
+                List<ItemStack> items = new ArrayList<>();
+                String dropList = "undefined";
+
+                if (doc.containsKey("items")) items = ItemStackListCodec.deserializeBsonArray(doc.getArray("items"));
+                if (doc.containsKey("dropList")) dropList = doc.getString("dropList").getValue();
+
+                return new ChestData(items, dropList);
+            } catch (Exception e) {
+                System.err.println("Error migrating loot template: " + e.getMessage());
+                return new ChestData();
+            }
+        }
+
+        @Nonnull
+        @Override
+        public BsonValue encode(@Nonnull ChestData data, @Nonnull ExtraInfo extraInfo) {
+            return ChestData.INTERNAL_CODEC.encode(data, extraInfo);
+        }
+
+        @Nonnull
+        @Override
+        public Schema toSchema(@Nonnull SchemaContext context) {
+            return ChestData.INTERNAL_CODEC.toSchema(context);
+        }
+    }
+
+    // --- 3. Main Codec ---
     public static final BuilderCodec<LootChestTemplate> CODEC = BuilderCodec.builder(
                     LootChestTemplate.class,
                     LootChestTemplate::new
             )
-            .addField(new KeyedCodec<>("Templates", new MapCodec<>(Codec.STRING, ConcurrentHashMap::new)),
+            .addField(new KeyedCodec<>("Templates", new MapCodec<>(new LegacyChestDataCodec(), ConcurrentHashMap::new)),
                     (data, value) -> data.templates = new ConcurrentHashMap<>(value),
                     data -> data.templates)
             .build();
 
-    private Map<String, String> templates;
+    private Map<String, ChestData> templates;
 
     public LootChestTemplate() {
         this.templates = new ConcurrentHashMap<>();
     }
 
     public LootChestTemplate(LootChestTemplate other) {
-        this.templates = new ConcurrentHashMap<>(other.templates);
+        this.templates = new ConcurrentHashMap<>();
+        for (Map.Entry<String, ChestData> entry : other.templates.entrySet()) {
+            this.templates.put(entry.getKey(), new ChestData(entry.getValue()));
+        }
     }
 
     @Nullable
@@ -52,91 +152,134 @@ public class LootChestTemplate implements Resource<ChunkStore> {
     }
 
     public List<ItemStack> getTemplate(int x, int y, int z) {
-        String json = templates.get(getKey(x, y, z));
+        ChestData data = templates.get(getKey(x, y, z));
+        return data != null ? data.items : new ArrayList<>();
+    }
 
-        if (json == null || json.isEmpty()) {
-            return new ArrayList<>();
+    public String getDropList(int x, int y, int z) {
+        ChestData data = templates.get(getKey(x, y, z));
+        return data != null ? data.dropList : "undefined";
+    }
+
+    public void setDropList(int x, int y, int z, String dropList) {
+        ChestData data = templates.get(getKey(x, y, z));
+        if (data != null) {
+            data.dropList = dropList != null ? dropList : "undefined";
+        }
+    }
+
+    public void saveTemplate(int x, int y, int z, List<ItemStack> items, String dropList) {
+        templates.put(getKey(x, y, z), new ChestData(items, dropList));
+    }
+
+    public static class ItemStackListCodec implements Codec<List<ItemStack>> {
+        @Nonnull
+        @Override
+        public List<ItemStack> decode(@Nonnull BsonValue bsonValue, @Nonnull ExtraInfo extraInfo) {
+            return deserializeBsonArray(bsonValue.asArray());
         }
 
-        return InventorySerializer.deserialize(json);
-    }
+        @Nonnull
+        @Override
+        public List<ItemStack> decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
+            List<ItemStack> list = new ArrayList<>();
+            reader.expect('[');
+            reader.consumeWhiteSpace();
+            if (reader.tryConsume(']')) return list;
 
-    public void saveTemplate(int x, int y, int z, List<ItemStack> items) {
-        String json = InventorySerializer.serialize(items);
-        templates.put(getKey(x, y, z), json);
-    }
+            while (true) {
+                reader.consumeWhiteSpace();
 
-    public static class InventorySerializer {
-        public static String serialize(List<ItemStack> items) {
-            StringBuilder jsonBuilder = new StringBuilder();
-            jsonBuilder.append("[");
-
-            for (int i = 0; i < items.size(); i++) {
-                ItemStack stack = items.get(i);
-
-                if (stack != null) {
-                    BsonDocument doc = new BsonDocument();
-
-                    doc.append("id", new BsonString(stack.getItemId()));
-                    doc.append("q", new BsonInt32(stack.getQuantity()));
-
-                    doc.append("d", new BsonDouble(stack.getDurability()));
-                    doc.append("md", new BsonDouble(stack.getMaxDurability()));
-
-                    if (stack.getMetadata() != null) {
-                        doc.append("meta", stack.getMetadata());
-                    }
-
-                    jsonBuilder.append(doc.toJson());
-
+                if (reader.peekFor('n') || reader.peekFor('N')) {
+                    reader.readNullValue();
+                    list.add(null);
                 } else {
-                    jsonBuilder.append("null");
+                    list.add(decodeItemStackJson(reader));
                 }
 
-                if (i < items.size() - 1) {
-                    jsonBuilder.append(",");
-                }
+                reader.consumeWhiteSpace();
+                if (reader.tryConsume(']')) break;
+                reader.expect(',');
             }
-
-            jsonBuilder.append("]");
-
-            return jsonBuilder.toString();
+            return list;
         }
 
+        private ItemStack decodeItemStackJson(RawJsonReader reader) throws IOException {
+            reader.expect('{');
+            String id = "";
+            int q = 1;
+            double d = 0;
+            double md = 0;
 
-        public static List<ItemStack> deserialize(String json) {
+            reader.consumeWhiteSpace();
+            if (reader.tryConsume('}')) return new ItemStack("air", 0, 0, 0, null);
+
+            while (true) {
+                reader.consumeWhiteSpace();
+                String key = reader.readString();
+                reader.consumeWhiteSpace();
+                reader.expect(':');
+                reader.consumeWhiteSpace();
+
+                switch (key) {
+                    case "id" -> id = reader.readString();
+                    case "q" -> q = reader.readIntValue();
+                    case "d" -> d = reader.readDoubleValue();
+                    case "md" -> md = reader.readDoubleValue();
+                    default -> reader.skipValue();
+                }
+
+                reader.consumeWhiteSpace();
+                if (reader.tryConsume('}')) break;
+                reader.expect(',');
+            }
+            return new ItemStack(id, q, d, md, null);
+        }
+
+        public static List<ItemStack> deserializeBsonArray(BsonArray array) {
             List<ItemStack> items = new ArrayList<>();
-
-            try {
-                BsonArray array = BsonArray.parse(json);
-
-                for (BsonValue value : array) {
-                    if (value.isNull()) {
-                        items.add(null);
-                        continue;
-                    }
-
-                    if (value.isDocument()) {
+            if (array == null) return items;
+            for (BsonValue value : array) {
+                if (value.isNull()) { items.add(null); continue; }
+                if (value.isDocument()) {
+                    try {
                         BsonDocument doc = value.asDocument();
-
                         String itemId = doc.getString("id").getValue();
                         int quantity = doc.getInt32("q").getValue();
                         double durability = doc.getDouble("d").getValue();
                         double maxDurability = doc.getDouble("md").getValue();
-
-                        BsonDocument metadata = null;
-                        if (doc.containsKey("meta")) {
-                            metadata = doc.getDocument("meta");
-                        }
-
+                        BsonDocument metadata = doc.containsKey("meta") ? doc.getDocument("meta") : null;
                         items.add(new ItemStack(itemId, quantity, durability, maxDurability, metadata));
-                    }
+                    } catch (Exception ignored) {}
                 }
-            } catch (Exception e) {
-                System.err.println("Failed to deserialize inventory BSON: " + e.getMessage());
             }
-
             return items;
+        }
+
+        @Nonnull
+        @Override
+        public BsonValue encode(@Nonnull List<ItemStack> items, @Nonnull ExtraInfo extraInfo) {
+            BsonArray array = new BsonArray();
+            for (ItemStack stack : items) {
+                if (stack != null) {
+                    BsonDocument doc = new BsonDocument();
+                    doc.append("id", new BsonString(stack.getItemId()));
+                    doc.append("q", new BsonInt32(stack.getQuantity()));
+                    doc.append("d", new BsonDouble(stack.getDurability()));
+                    doc.append("md", new BsonDouble(stack.getMaxDurability()));
+                    if (stack.getMetadata() != null) doc.append("meta", stack.getMetadata());
+                    array.add(doc);
+                } else {
+                    array.add(new BsonNull());
+                }
+            }
+            return array;
+        }
+
+        @Nonnull
+        @Override
+        public Schema toSchema(@Nonnull SchemaContext context) {
+            return new ArraySchema();
         }
     }
 }

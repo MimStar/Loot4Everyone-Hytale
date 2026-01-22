@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.system.RefSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.modules.block.system.ItemContainerStateSpatialSystem;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockStateModule;
@@ -25,6 +26,7 @@ import org.mimstar.plugin.events.UseBlockEventPre;
 import org.mimstar.plugin.resources.LootChestConfig;
 import org.mimstar.plugin.resources.LootChestTemplate;
 import org.mimstar.plugin.systems.ContainerMonitoringSystem;
+import org.mimstar.plugin.systems.LootChestRangeSystem;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -67,6 +69,8 @@ public class Loot4Everyone extends JavaPlugin {
                 .registerComponent(OpenedContainerComponent.class, OpenedContainerComponent::new);
 
         this.getEntityStoreRegistry().registerSystem(new ContainerMonitoringSystem(this.containerComponentType));
+
+        this.getEntityStoreRegistry().registerSystem(new LootChestRangeSystem());
 
         this.lootChestTemplateComponentType = this.getChunkStoreRegistry().registerResource(LootChestTemplate.class, "LootChestTemplate", LootChestTemplate.CODEC);
 
@@ -122,18 +126,18 @@ public class Loot4Everyone extends JavaPlugin {
         @Override
         public void onEntityAdded(@NonNullDecl Ref<ChunkStore> ref, @NonNullDecl AddReason addReason, @NonNullDecl Store<ChunkStore> store, @NonNullDecl CommandBuffer<ChunkStore> commandBuffer) {
             ItemContainerState itemContainerState = store.getComponent(ref, this.componentType);
+            LootChestTemplate lootChestTemplate = commandBuffer.getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
             if (itemContainerState != null && itemContainerState.getDroplist() != null) {
-                LootChestTemplate lootChestTemplate = commandBuffer.getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
-
                 if (lootChestTemplate != null) {
                     int x = itemContainerState.getBlockX();
                     int y = itemContainerState.getBlockY();
                     int z = itemContainerState.getBlockZ();
+                    String droplist = itemContainerState.getDroplist();
 
                     if (!lootChestTemplate.hasTemplate(x, y, z)) {
                         List<ItemStack> items = new ArrayList<>();
-                        lootChestTemplate.saveTemplate(x, y, z, items);
+                        lootChestTemplate.saveTemplate(x, y, z, items, droplist);
                     }
                 }
             }

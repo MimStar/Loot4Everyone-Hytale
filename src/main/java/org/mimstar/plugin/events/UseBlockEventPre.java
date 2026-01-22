@@ -10,6 +10,8 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockState;
 import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.worldgen.chunk.ChunkGenerator;
+import com.hypixel.hytale.server.worldgen.chunk.ZoneBiomeResult;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.components.OpenedContainerComponent;
@@ -58,16 +60,12 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                         items.add(itemContainerState.getItemContainer().getItemStack((short) i));
                     }
 
-                    lootChestTemplate.saveTemplate(target.getX(), target.getY(), target.getZ(), items);
+                    lootChestTemplate.saveTemplate(target.getX(), target.getY(), target.getZ(), items,lootChestTemplate.getDropList(target.getX(), target.getY(), target.getZ()));
                 }
                 else{
                     PlayerLoot playerLoot = store.getComponent(playerRef,Loot4Everyone.get().getPlayerLootcomponentType());
 
-                    if (playerLoot != null && playerLoot.hasDeprecatedData(target.getX(), target.getY(), target.getZ())){
-                        playerLoot.replaceDeprecatedData(target.getX(), target.getY(), target.getZ(), player.getWorld().getName());
-                    }
-
-                    if (playerLoot != null && playerLoot.hasData(target.getX(), target.getY(), target.getZ(),player.getWorld().getName())){
+                    if (playerLoot != null && !playerLoot.isFirstTime(target.getX(), target.getY(), target.getZ(),player.getWorld().getName())){
                         List<ItemStack> items = playerLoot.getInventory(target.getX(), target.getY(), target.getZ(),player.getWorld().getName());
                         for (int i = 0; i < itemContainerState.getItemContainer().getCapacity(); i++){
                             itemContainerState.getItemContainer().setItemStackForSlot((short) i, items.get(i));
