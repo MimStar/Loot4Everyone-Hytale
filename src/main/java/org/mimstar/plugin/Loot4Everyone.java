@@ -18,6 +18,7 @@ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import org.mimstar.plugin.commands.ResetLootChestCommand;
 import org.mimstar.plugin.commands.SetBreakRuleCommand;
+import org.mimstar.plugin.commands.SetRandomRuleCommand;
 import org.mimstar.plugin.components.OpenedContainerComponent;
 import org.mimstar.plugin.components.PlayerLoot;
 import org.mimstar.plugin.events.BreakBlockEventListener;
@@ -92,6 +93,7 @@ public class Loot4Everyone extends JavaPlugin {
 
         this.getCommandRegistry().registerCommand(new SetBreakRuleCommand());
         this.getCommandRegistry().registerCommand(new ResetLootChestCommand());
+        this.getCommandRegistry().registerCommand(new SetRandomRuleCommand());
     }
 
     public ComponentType<EntityStore, OpenedContainerComponent> getContainerComponentType() {

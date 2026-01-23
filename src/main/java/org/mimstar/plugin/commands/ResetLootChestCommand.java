@@ -94,7 +94,6 @@ public class ResetLootChestCommand extends AbstractPlayerCommand {
                                     storage.load(uuid)
                                             .thenApply(holder -> {
                                                 Nameplate nameplate = holder.getComponent(Nameplate.getComponentType());
-                                                System.out.println(nameplate.getText());
                                                 if (nameplate != null && nameplate.getText().toLowerCase().equals(searchName)) {
                                                     return uuid;
                                                 }

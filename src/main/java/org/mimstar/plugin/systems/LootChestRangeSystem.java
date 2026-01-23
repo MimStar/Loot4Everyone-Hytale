@@ -34,7 +34,7 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                      @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
 
         tickTimer++;
-        if (tickTimer < 40) return;
+        if (tickTimer < 20) return;
         tickTimer = 0;
 
         Player player = archetypeChunk.getComponent(index, Player.getComponentType());
