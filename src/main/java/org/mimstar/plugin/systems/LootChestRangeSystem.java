@@ -8,7 +8,6 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.protocol.SoundCategory;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.SoundUtil;
@@ -26,7 +25,6 @@ import org.mimstar.plugin.components.PlayerLoot;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 
 public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
     private int tickTimer = 0;
@@ -42,7 +40,6 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
         Player player = archetypeChunk.getComponent(index, Player.getComponentType());
         Vector3d playerPos = player.getTransformComponent().getPosition();
 
-        // Get the Spatial Resource for Containers
         var world = player.getWorld();
         var spatial = world.getChunkStore().getStore().getResource(BlockStateModule.get().getItemContainerSpatialResourceType());
         if (spatial == null) return;

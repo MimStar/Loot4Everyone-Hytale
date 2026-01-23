@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerLoot implements Component<EntityStore> {
 
-    // --- 1. Data Object ---
     public static class ChestData {
         public List<ItemStack> items = new ArrayList<>();
         public boolean discovered = false;
@@ -47,7 +46,6 @@ public class PlayerLoot implements Component<EntityStore> {
                 .build();
     }
 
-    // --- 2. Migration Codec ---
     public static class LegacyChestDataCodec implements Codec<ChestData> {
         @Nonnull
         @Override
@@ -111,8 +109,6 @@ public class PlayerLoot implements Component<EntityStore> {
         }
     }
 
-    // --- 3. Main Component ---
-
     public static final BuilderCodec<PlayerLoot> CODEC = BuilderCodec.builder(PlayerLoot.class, PlayerLoot::new)
             .addField(new KeyedCodec<>("Templates", new MapCodec<>(new LegacyChestDataCodec(), ConcurrentHashMap::new)),
                     (data, value) -> data.lootData = new ConcurrentHashMap<>(value),
@@ -160,34 +156,31 @@ public class PlayerLoot implements Component<EntityStore> {
         }
     }
 
-    // --- REPLACED hasData with isFirstTime ---
+    public void resetChest(int x, int y, int z, String world_name) {
 
-    /**
-     * Checks if it is the first time the player is interacting with this chest.
-     * @return true if no data exists OR data exists but 'discovered' is false.
-     */
+        lootData.remove(getKey(x,y,z,world_name));
+
+        lootData.remove(getDeprecatedKey(x,y,z));
+    }
+
+    public void resetAllChests() {
+        lootData.clear();
+    }
+
     public boolean isFirstTime(int x, int y, int z, String world_name) {
         String key = getKey(x, y, z, world_name);
 
-        // 1. Handle migration if the new key doesn't exist but the old one does
         if (!lootData.containsKey(key) && hasDeprecatedData(x, y, z)) {
             replaceDeprecatedData(x, y, z, world_name);
         }
 
-        // 2. Retrieve data (migrated or existing)
         ChestData data = lootData.get(key);
 
-        // 3. Logic:
-        // - If data is null, they have never touched it -> First Time (true)
-        // - If data exists, return !discovered (e.g., if discovered is false, it IS the first time)
-        return data == null || !data.discovered || (data.discovered && data.items.isEmpty());
+        return data == null || data.items.isEmpty();
     }
 
-    // --- Other Methods ---
 
     public boolean isDiscovered(int x, int y, int z, String world_name) {
-        // Reuse isFirstTime logic to ensure migration happens, then invert result
-        // OR explicit logic:
         if (!lootData.containsKey(getKey(x, y, z, world_name)) && hasDeprecatedData(x, y, z)) {
             replaceDeprecatedData(x, y, z, world_name);
         }
@@ -207,7 +200,6 @@ public class PlayerLoot implements Component<EntityStore> {
     }
 
     public List<ItemStack> getInventory(int x, int y, int z, String world_name) {
-        // Ensure migration before getting inventory
         if (!lootData.containsKey(getKey(x, y, z, world_name)) && hasDeprecatedData(x, y, z)) {
             replaceDeprecatedData(x, y, z, world_name);
         }
@@ -220,8 +212,6 @@ public class PlayerLoot implements Component<EntityStore> {
         String key = getKey(x, y, z, world_name);
         lootData.compute(key, (k, v) -> {
             if (v == null) {
-                // Assuming setting inventory implies we are setting up the chest
-                // We set discovered to true so isFirstTime becomes false next time
                 return new ChestData(new ArrayList<>(items), true);
             }
             v.items = new ArrayList<>(items);
@@ -229,7 +219,6 @@ public class PlayerLoot implements Component<EntityStore> {
         });
     }
 
-    // --- ItemStack Helper ---
     public static class ItemStackListCodec implements Codec<List<ItemStack>> {
         @Nonnull
         @Override

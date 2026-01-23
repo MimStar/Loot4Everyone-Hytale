@@ -16,6 +16,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.mimstar.plugin.commands.ResetLootChestCommand;
 import org.mimstar.plugin.commands.SetBreakRuleCommand;
 import org.mimstar.plugin.components.OpenedContainerComponent;
 import org.mimstar.plugin.components.PlayerLoot;
@@ -90,6 +91,7 @@ public class Loot4Everyone extends JavaPlugin {
         });
 
         this.getCommandRegistry().registerCommand(new SetBreakRuleCommand());
+        this.getCommandRegistry().registerCommand(new ResetLootChestCommand());
     }
 
     public ComponentType<EntityStore, OpenedContainerComponent> getContainerComponentType() {
