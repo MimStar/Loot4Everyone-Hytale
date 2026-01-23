@@ -78,31 +78,83 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                     } else {
                         String droplist = lootChestTemplate.getDropList(target.getX(),target.getY(),target.getZ());
                         if (droplist != null && !droplist.equals("undefined")) {
-                            List<ItemStack> stacks = ItemModule.get().getRandomItemDrops(droplist);
-                            if (!stacks.isEmpty()) {
-                                short capacity = itemContainerState.getItemContainer().getCapacity();
-                                List<Short> slots = new ArrayList<>();
-                                for (short s = 0; s < capacity; s++) {
-                                    slots.add(s);
-                                }
-
-                                Random rnd = new Random(target.hashCode());
-                                Collections.shuffle(slots, rnd);
-
-                                ClearTransaction clearTransaction = itemContainerState.getItemContainer().clear();
-                                if (clearTransaction.succeeded()) {
-
-                                    for (int idx = 0; idx < stacks.size() && idx < slots.size(); idx++) {
-                                        short slot = slots.get(idx);
-                                        itemContainerState.getItemContainer().setItemStackForSlot(slot, stacks.get(idx));
+                            if (!droplist.equals("custom")) {
+                                List<ItemStack> stacks = ItemModule.get().getRandomItemDrops(droplist);
+                                if (!stacks.isEmpty()) {
+                                    short capacity = itemContainerState.getItemContainer().getCapacity();
+                                    List<Short> slots = new ArrayList<>();
+                                    for (short s = 0; s < capacity; s++) {
+                                        slots.add(s);
                                     }
-                                }
-                                else{
+
+                                    Random rnd = new Random(target.hashCode());
+                                    Collections.shuffle(slots, rnd);
+
+                                    ClearTransaction clearTransaction = itemContainerState.getItemContainer().clear();
+                                    if (clearTransaction.succeeded()) {
+
+                                        for (int idx = 0; idx < stacks.size() && idx < slots.size(); idx++) {
+                                            short slot = slots.get(idx);
+                                            itemContainerState.getItemContainer().setItemStackForSlot(slot, stacks.get(idx));
+                                        }
+                                    } else {
+                                        useBlockEventPre.setCancelled(true);
+                                    }
+                                } else {
                                     useBlockEventPre.setCancelled(true);
                                 }
                             }
                             else{
-                                useBlockEventPre.setCancelled(true);
+                                // 1. Retrieve the saved items from your template
+                                List<ItemStack> customStacks = lootChestTemplate.getTemplate(target.getX(), target.getY(), target.getZ());
+
+                                if (customStacks != null && !customStacks.isEmpty()) {
+                                    short capacity = itemContainerState.getItemContainer().getCapacity();
+                                    List<Short> slots = new ArrayList<>();
+                                    for (short s = 0; s < capacity; s++) {
+                                        slots.add(s);
+                                    }
+
+                                    // Use a consistent seed for slot positions, but a unique one for quantities if desired
+                                    Random rnd = new Random(target.hashCode());
+                                    Collections.shuffle(slots, rnd);
+
+                                    ClearTransaction clearTransaction = itemContainerState.getItemContainer().clear();
+                                    if (clearTransaction.succeeded()) {
+
+                                        // 2. Iterate and apply "Drop Logic"
+                                        for (int idx = 0; idx < customStacks.size() && idx < slots.size(); idx++) {
+                                            ItemStack originalStack = customStacks.get(idx);
+
+                                            // --- RANDOM QUANTITY LOGIC ---
+                                            // We treat the saved stack size as the 'Max'.
+                                            // This mimics drop.getRandomQuantity(random).
+                                            int maxAmount = originalStack.getQuantity();
+                                            int randomAmount = rnd.nextInt(maxAmount) + 1; // Generates 1 to maxAmount
+
+                                            // --- CHANCE TO FAIL LOGIC (Optional) ---
+                                            // If you want some items to just not appear at all (e.g., 75% spawn rate)
+                                            if (rnd.nextDouble() > 0.25) {
+                                                short slot = slots.get(idx);
+
+                                                // Create a new stack with the randomized quantity
+                                                ItemStack droppedStack = new ItemStack(
+                                                        originalStack.getItemId(),
+                                                        randomAmount,
+                                                        originalStack.getDurability(),
+                                                        originalStack.getMaxDurability(),
+                                                        originalStack.getMetadata()
+                                                );
+
+                                                itemContainerState.getItemContainer().setItemStackForSlot(slot, droppedStack);
+                                            }
+                                        }
+                                    } else {
+                                        useBlockEventPre.setCancelled(true);
+                                    }
+                                } else {
+                                    useBlockEventPre.setCancelled(true);
+                                }
                             }
                         }
                         else{

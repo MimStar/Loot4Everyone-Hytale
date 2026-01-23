@@ -172,6 +172,10 @@ public class LootChestTemplate implements Resource<ChunkStore> {
         templates.put(getKey(x, y, z), new ChestData(items, dropList));
     }
 
+    public void removeTemplate(int x, int y, int z){
+        templates.remove(getKey(x, y, z));
+    }
+
     public static class ItemStackListCodec implements Codec<List<ItemStack>> {
         @Nonnull
         @Override

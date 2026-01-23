@@ -32,7 +32,7 @@ public class ResetLootChestCommand extends AbstractPlayerCommand {
     private static final int BATCH_SIZE = 20;
 
     public ResetLootChestCommand() {
-        super("resetloot", "A command to reset one or multiple loot chests for specified players");
+        super("resetlc", "A command to reset one or multiple loot chests for specified players");
     }
 
     OptionalArg<String> playerArg = this.withOptionalArg("player", "Name or UUID of the player", ArgTypes.STRING);
