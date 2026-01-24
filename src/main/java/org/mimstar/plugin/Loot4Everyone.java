@@ -95,6 +95,7 @@ public class Loot4Everyone extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new GenerateLootChestCommand());
         this.getCommandRegistry().registerCommand(new DeleteLootChestCommand());
         this.getCommandRegistry().registerCommand(new EditLootChestCommand());
+        this.getCommandRegistry().registerCommand(new SetMessageRuleCommand());
     }
 
     public ComponentType<EntityStore, OpenedContainerComponent> getContainerComponentType() {

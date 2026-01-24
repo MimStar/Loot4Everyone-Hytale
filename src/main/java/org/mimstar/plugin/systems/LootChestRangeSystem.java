@@ -22,6 +22,7 @@ import com.hypixel.hytale.server.worldgen.chunk.ZoneBiomeResult;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.components.PlayerLoot;
+import org.mimstar.plugin.resources.LootChestConfig;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
 import javax.annotation.Nonnull;
@@ -37,60 +38,73 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
         if (tickTimer < 20) return;
         tickTimer = 0;
 
-        Player player = archetypeChunk.getComponent(index, Player.getComponentType());
-        Vector3d playerPos = player.getTransformComponent().getPosition();
+        commandBuffer.run(deferredStore -> {
+            try {
 
-        var world = player.getWorld();
-        var spatial = world.getChunkStore().getStore().getResource(BlockStateModule.get().getItemContainerSpatialResourceType());
-        if (spatial == null) return;
-        ObjectList<Ref<ChunkStore>> objectList = SpatialResource.getThreadLocalReferenceList();
-        spatial.getSpatialStructure().collect(playerPos, 5.0, objectList);
+                Player player = archetypeChunk.getComponent(index, Player.getComponentType());
+                PlayerLoot playerLoot = archetypeChunk.getComponent(index, Loot4Everyone.get().getPlayerLootcomponentType());
+                PlayerRef playerRef = archetypeChunk.getComponent(index, PlayerRef.getComponentType());
 
-        if (!objectList.isEmpty()) {
-            Ref<ChunkStore> ref = objectList.get(0);
-            if (ref.isValid()) {
-                BlockModule.BlockStateInfo blockInfo = ref.getStore().getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-                if (blockInfo != null) {
-                    Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
-                    if (chunkRef != null && chunkRef.isValid()) {
-                        ItemContainerState itemContainerState = ref.getStore().getComponent(ref, BlockStateModule.get().getComponentType(ItemContainerState.class));
+                if (player == null || playerLoot == null || playerRef == null) return;
 
-                        if (itemContainerState != null) {
-                            LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
+                Vector3d playerPos = player.getTransformComponent().getPosition();
 
-                            int x = itemContainerState.getBlockX();
-                            int y = itemContainerState.getBlockY();
-                            int z = itemContainerState.getBlockZ();
+                var world = player.getWorld();
+                var chunkStore = world.getChunkStore();
+                if (chunkStore == null) return;
 
-                            if (lootChestTemplate.hasTemplate(x, y, z)) {
-                                PlayerLoot playerLoot = store.getComponent(player.getReference(), Loot4Everyone.get().getPlayerLootcomponentType());
+                var spatialResourceType = BlockStateModule.get().getItemContainerSpatialResourceType();
+                var spatial = chunkStore.getStore().getResource(spatialResourceType);
+                if (spatial == null) return;
 
-                                if (!playerLoot.isDiscovered(x, y, z, player.getWorld().getName())) {
+                ObjectList<Ref<ChunkStore>> objectList = SpatialResource.getThreadLocalReferenceList();
+                spatial.getSpatialStructure().collect(playerPos, 5.0, objectList);
 
-                                    String dropListName = lootChestTemplate.getDropList(x, y, z);
+                if (!objectList.isEmpty()) {
+                    Ref<ChunkStore> ref = objectList.get(0);
+                    if (ref.isValid()) {
+                        BlockModule.BlockStateInfo blockInfo = ref.getStore().getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+                        if (blockInfo != null) {
+                            Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
+                            if (chunkRef != null && chunkRef.isValid()) {
+                                ItemContainerState itemContainerState = ref.getStore().getComponent(ref,
+                                        BlockStateModule.get().getComponentType(ItemContainerState.class));
 
-                                    if ("undefined".equals(dropListName)) {
-                                        ChunkGenerator chunkGenerator = (ChunkGenerator) player.getWorld().getChunkStore().getGenerator();
-                                        int seed = (int) player.getWorld().getWorldConfig().getSeed();
+                                if (itemContainerState != null) {
+                                    LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore()
+                                            .getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
-                                        ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, x, z);
-                                        String zoneName = result.getZoneResult().getZone().name(); // Ex: Zone1_Tier1
+                                    int x = itemContainerState.getBlockX();
+                                    int y = itemContainerState.getBlockY();
+                                    int z = itemContainerState.getBlockZ();
 
-                                        dropListName = zoneName.replace("_", "_Encounters_");
+                                    if (lootChestTemplate != null && lootChestTemplate.hasTemplate(x, y, z)) {
+                                        if (!playerLoot.isDiscovered(x, y, z, world.getName())) {
+                                            String dropListName = lootChestTemplate.getDropList(x, y, z);
 
-                                        lootChestTemplate.setDropList(x, y, z, dropListName);
-                                    }
+                                            if ("undefined".equals(dropListName)) {
+                                                ChunkGenerator chunkGenerator = (ChunkGenerator) world.getChunkStore().getGenerator();
+                                                int seed = (int) world.getWorldConfig().getSeed();
 
-                                    playerLoot.setDiscovered(x, y, z, player.getWorld().getName(), true);
+                                                ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, x, z);
+                                                String zoneName = result.getZoneResult().getZone().name();
+                                                dropListName = zoneName.replace("_", "_Encounters_");
 
-                                    PlayerRef playerRef = store.getComponent(player.getReference(), PlayerRef.getComponentType());
+                                                lootChestTemplate.setDropList(x, y, z, dropListName);
+                                            }
 
-                                    if (playerRef != null) {
-                                        EventTitleUtil.showEventTitleToPlayer(playerRef, Message.raw("New loot chest discovered!"), Message.raw(dropListName), true);
+                                            playerLoot.setDiscovered(x, y, z, world.getName(), true);
 
-                                        int soundEventIndex = TempAssetIdUtil.getSoundEventIndex("SFX_Memories_Unlock_Local");
-                                        if (soundEventIndex > 0) {
-                                            SoundUtil.playSoundEvent2dToPlayer(playerRef, soundEventIndex, SoundCategory.SFX);
+                                            LootChestConfig lootChestConfig = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
+
+                                            if (lootChestConfig.isMessageAppear()){
+                                                EventTitleUtil.showEventTitleToPlayer(playerRef, Message.raw("New loot chest discovered!"), Message.raw(dropListName), true);
+
+                                                int soundEventIndex = TempAssetIdUtil.getSoundEventIndex("SFX_Memories_Unlock_Local");
+                                                if (soundEventIndex > 0) {
+                                                    SoundUtil.playSoundEvent2dToPlayer(playerRef, soundEventIndex, SoundCategory.SFX);
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -98,8 +112,10 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                         }
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        }
+        });
     }
 
     @Nonnull
