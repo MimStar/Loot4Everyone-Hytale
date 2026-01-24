@@ -15,6 +15,8 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.playerdata.PlayerStorage;
 import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.meta.BlockState;
+import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.TargetUtil;
 import org.mimstar.plugin.Loot4Everyone;
@@ -50,6 +52,14 @@ public class ResetLootChestCommand extends AbstractPlayerCommand {
 
         if (!resetAllChests) {
             Vector3i targetBlock = TargetUtil.getTargetBlock(ref, 10.0, store);
+
+            BlockState state = world.getState(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), true);
+            if (!(state instanceof ItemContainerState itemContainerState)) {
+                executor.sendMessage(Message.raw("Please look at a loot container!"));
+                return;
+            }
+
+            targetBlock = new Vector3i(itemContainerState.getBlockX(),itemContainerState.getBlockY(),itemContainerState.getBlockZ());
 
             LootChestTemplate lootChestTemplate = executor.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
             if (targetBlock == null || !lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {

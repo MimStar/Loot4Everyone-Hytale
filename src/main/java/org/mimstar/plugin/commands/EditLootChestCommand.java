@@ -25,7 +25,6 @@ import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.List;
 
 public class EditLootChestCommand extends AbstractPlayerCommand {
@@ -56,6 +55,8 @@ public class EditLootChestCommand extends AbstractPlayerCommand {
             executor.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
             return;
         }
+
+        targetBlock = new Vector3i(itemContainerState.getBlockX(),itemContainerState.getBlockY(),itemContainerState.getBlockZ());
 
         LootChestTemplate lootChestTemplate = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
         if (!lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {

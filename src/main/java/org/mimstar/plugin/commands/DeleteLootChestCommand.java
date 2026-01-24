@@ -51,14 +51,14 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
                 return;
             }
 
+            targetBlock = new Vector3i(itemContainerState.getBlockX(),itemContainerState.getBlockY(),itemContainerState.getBlockZ());
+
             LootChestTemplate lootChestTemplate = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
             if (lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {
 
                 lootChestTemplate.removeTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ());
 
                 cleanupPlayerData(executor, targetBlock, world.getName(), store);
-
-                executor.sendMessage(Message.raw("Loot container deleted!"));
             } else {
                 executor.sendMessage(Message.raw("Please look at a registered loot container!"));
             }
@@ -68,8 +68,6 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
     }
 
     private void cleanupPlayerData(Player executor, Vector3i targetBlock, String worldName, Store<EntityStore> store) {
-        //executor.sendMessage(Message.raw("Loot container deleted! cleaning up player data..."));
-
         PlayerStorage storage = Universe.get().getPlayerStorage();
         Set<UUID> allPlayers;
         try {
@@ -87,7 +85,7 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
         };
 
         List<UUID> offlinePlayers = new ArrayList<>();
-        int onlineProcessed = 0;
+        //int onlineProcessed = 0;
 
         for (UUID uuid : allPlayers) {
             PlayerRef targetRef = Universe.get().getPlayer(uuid);
@@ -97,7 +95,7 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
                     PlayerLoot component = store.getComponent(targetEntityRef, Loot4Everyone.get().getPlayerLootcomponentType());
                     if (component != null) {
                         resetAction.accept(component);
-                        onlineProcessed++;
+                        //onlineProcessed++;
                     }
                 }
             } else {
@@ -109,7 +107,7 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
             AtomicInteger processedCount = new AtomicInteger(0);
             recursiveBatchProcess(offlinePlayers.iterator(), storage, resetAction, executor, processedCount);
         } else {
-            //executor.sendMessage(Message.raw("Cleanup complete."));
+            executor.sendMessage(Message.raw("Loot container deleted!"));
         }
     }
 
@@ -135,7 +133,7 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
         }
 
         if (batchFutures.isEmpty()) {
-            //executor.sendMessage(Message.raw("Cleanup finished for " + counter.get() + " offline players."));
+            executor.sendMessage(Message.raw("Loot container deleted!"));
             return;
         }
 

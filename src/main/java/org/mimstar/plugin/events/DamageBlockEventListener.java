@@ -59,6 +59,32 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
 
             damageBlockEvent.setCancelled(true);
         }
+
+        if (isProtectedChest(player, target.getX() + 1, target.getY() + 1, target.getZ())) {
+
+            LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
+
+            BlockState blockState = player.getWorld().getState(target.getX(), target.getY() + 1, target.getZ(), true);
+
+            if (lootChestConfig != null && lootChestConfig.isCanPlayerBreakLootChests() && blockState instanceof ItemContainerState itemContainerState && itemContainerState.getWindows().isEmpty()){
+                return;
+            }
+
+            damageBlockEvent.setCancelled(true);
+        }
+
+        if (isProtectedChest(player, target.getX(), target.getY() + 1, target.getZ() + 1)) {
+
+            LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
+
+            BlockState blockState = player.getWorld().getState(target.getX(), target.getY() + 1, target.getZ(), true);
+
+            if (lootChestConfig != null && lootChestConfig.isCanPlayerBreakLootChests() && blockState instanceof ItemContainerState itemContainerState && itemContainerState.getWindows().isEmpty()){
+                return;
+            }
+
+            damageBlockEvent.setCancelled(true);
+        }
     }
 
     /**

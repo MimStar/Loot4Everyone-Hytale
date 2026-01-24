@@ -22,7 +22,7 @@ import org.mimstar.plugin.resources.LootChestTemplate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
     public UseBlockEventPre() {
@@ -86,9 +86,7 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                                     for (short s = 0; s < capacity; s++) {
                                         slots.add(s);
                                     }
-
-                                    Random rnd = new Random(target.hashCode());
-                                    Collections.shuffle(slots, rnd);
+                                    Collections.shuffle(slots, ThreadLocalRandom.current());
 
                                     ClearTransaction clearTransaction = itemContainerState.getItemContainer().clear();
                                     if (clearTransaction.succeeded()) {
@@ -105,7 +103,6 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                                 }
                             }
                             else{
-                                // 1. Retrieve the saved items from your template
                                 List<ItemStack> customStacks = lootChestTemplate.getTemplate(target.getX(), target.getY(), target.getZ());
 
                                 if (customStacks != null && !customStacks.isEmpty()) {
@@ -115,29 +112,20 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                                         slots.add(s);
                                     }
 
-                                    // Use a consistent seed for slot positions, but a unique one for quantities if desired
-                                    Random rnd = new Random(target.hashCode());
-                                    Collections.shuffle(slots, rnd);
+                                    Collections.shuffle(slots, ThreadLocalRandom.current());
 
                                     ClearTransaction clearTransaction = itemContainerState.getItemContainer().clear();
                                     if (clearTransaction.succeeded()) {
 
-                                        // 2. Iterate and apply "Drop Logic"
                                         for (int idx = 0; idx < customStacks.size() && idx < slots.size(); idx++) {
                                             ItemStack originalStack = customStacks.get(idx);
 
-                                            // --- RANDOM QUANTITY LOGIC ---
-                                            // We treat the saved stack size as the 'Max'.
-                                            // This mimics drop.getRandomQuantity(random).
                                             int maxAmount = originalStack.getQuantity();
-                                            int randomAmount = rnd.nextInt(maxAmount) + 1; // Generates 1 to maxAmount
+                                            int randomAmount = ThreadLocalRandom.current().nextInt(maxAmount) + 1;
 
-                                            // --- CHANCE TO FAIL LOGIC (Optional) ---
-                                            // If you want some items to just not appear at all (e.g., 75% spawn rate)
-                                            if (rnd.nextDouble() > 0.25) {
+                                            if (ThreadLocalRandom.current().nextDouble() > 0.25) {
                                                 short slot = slots.get(idx);
 
-                                                // Create a new stack with the randomized quantity
                                                 ItemStack droppedStack = new ItemStack(
                                                         originalStack.getItemId(),
                                                         randomAmount,

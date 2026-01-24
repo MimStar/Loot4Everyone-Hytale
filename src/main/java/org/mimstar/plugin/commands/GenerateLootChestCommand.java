@@ -20,7 +20,6 @@ import com.hypixel.hytale.server.core.universe.world.meta.BlockState;
 import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.TargetUtil;
-import com.hypixel.hytale.server.npc.asset.builder.validators.asset.ItemDropListExistsValidator;
 import com.hypixel.hytale.server.worldgen.chunk.ChunkGenerator;
 import com.hypixel.hytale.server.worldgen.chunk.ZoneBiomeResult;
 import org.mimstar.plugin.Loot4Everyone;
@@ -31,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class GenerateLootChestCommand extends AbstractPlayerCommand {
 
@@ -55,6 +55,8 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
                 executor.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
                 return;
             }
+
+            targetBlock = new Vector3i(itemContainerState.getBlockX(),itemContainerState.getBlockY(),itemContainerState.getBlockZ());
 
             LootChestTemplate lootChestTemplate = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
             if (lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {
@@ -127,8 +129,7 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
                             slots.add(s);
                         }
 
-                        Random rnd = new Random(targetBlock.hashCode());
-                        Collections.shuffle(slots, rnd);
+                        Collections.shuffle(slots, ThreadLocalRandom.current());
 
                         List<ItemStack> inventoryRandom = new ArrayList<>();
 
