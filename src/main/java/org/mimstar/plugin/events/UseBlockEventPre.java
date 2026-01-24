@@ -9,11 +9,14 @@ import com.hypixel.hytale.server.core.event.events.ecs.UseBlockEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.transaction.ClearTransaction;
 import com.hypixel.hytale.server.core.modules.item.ItemModule;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockState;
 import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.mimstar.plugin.Loot4Everyone;
+import org.mimstar.plugin.components.LootContainerComponent;
 import org.mimstar.plugin.components.OpenedContainerComponent;
 import org.mimstar.plugin.components.PlayerLoot;
 import org.mimstar.plugin.resources.LootChestConfig;
@@ -57,6 +60,17 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
 
                 LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
                 PlayerLoot playerLoot = store.getComponent(playerRef, Loot4Everyone.get().getPlayerLootcomponentType());
+
+                LootContainerComponent lootContainerComponent = player.getWorld().getChunkStore().getStore().getComponent(blockType.getReference(),Loot4Everyone.get().getLootContainerComponentType());
+
+                System.out.println(lootContainerComponent.getItems());
+                System.out.println(lootContainerComponent.getDropList());
+
+                lootContainerComponent.setDropList("test");
+
+                WorldChunk worldChunk = itemContainerState.getChunk();
+
+                worldChunk.markNeedsSaving();
 
                 if (!lootChestConfig.isLootChestRandom()) {
                     if (lootChestTemplate.getTemplate(target.getX(), target.getY(), target.getZ()).isEmpty()) {

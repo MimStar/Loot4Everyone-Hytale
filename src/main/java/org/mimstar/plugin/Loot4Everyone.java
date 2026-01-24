@@ -10,6 +10,7 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.block.system.ItemContainerStateSpatialSystem;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
+import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockStateModule;
 import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
@@ -17,6 +18,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import org.mimstar.plugin.commands.*;
+import org.mimstar.plugin.components.LootContainerComponent;
 import org.mimstar.plugin.components.OpenedContainerComponent;
 import org.mimstar.plugin.components.PlayerLoot;
 import org.mimstar.plugin.events.BreakBlockEventListener;
@@ -51,6 +53,8 @@ public class Loot4Everyone extends JavaPlugin {
 
     private ComponentType<EntityStore, PlayerLoot> playerLootcomponentType;
 
+    private ComponentType<ChunkStore, LootContainerComponent> lootContainerComponentType;
+
     public Loot4Everyone(@Nonnull JavaPluginInit init) {
         super(init);
         instance = this;
@@ -78,6 +82,8 @@ public class Loot4Everyone extends JavaPlugin {
 
         this.playerLootcomponentType = this.getEntityStoreRegistry().registerComponent(PlayerLoot.class, "PlayerLoot", PlayerLoot.CODEC);
 
+        this.lootContainerComponentType = this.getChunkStoreRegistry().registerComponent(LootContainerComponent.class,"LootContainerData",LootContainerComponent.CODEC);
+
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, e -> {
 
             var playerRef = e.getPlayerRef();
@@ -100,6 +106,10 @@ public class Loot4Everyone extends JavaPlugin {
 
     public ComponentType<EntityStore, OpenedContainerComponent> getContainerComponentType() {
         return containerComponentType;
+    }
+
+    public ComponentType<ChunkStore, LootContainerComponent> getLootContainerComponentType(){
+        return lootContainerComponentType;
     }
 
     public ResourceType<ChunkStore, LootChestTemplate> getlootChestTemplateResourceType(){
@@ -144,6 +154,14 @@ public class Loot4Everyone extends JavaPlugin {
                     if (!lootChestTemplate.hasTemplate(x, y, z)) {
                         List<ItemStack> items = new ArrayList<>();
                         lootChestTemplate.saveTemplate(x, y, z, items, droplist);
+                        LootContainerComponent lootContainerComponent = commandBuffer.ensureAndGetComponent(ref,get().getLootContainerComponentType());
+                        lootContainerComponent.setItems(items);
+                        lootContainerComponent.setDropList(droplist);
+
+                        WorldChunk worldChunkComponent = itemContainerState.getChunk();
+
+                        worldChunkComponent.markNeedsSaving();
+
                     }
                 }
             }
