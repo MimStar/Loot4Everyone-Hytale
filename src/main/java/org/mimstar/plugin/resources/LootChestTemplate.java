@@ -37,7 +37,16 @@ public class LootChestTemplate implements Resource<ChunkStore> {
         }
 
         public ChestData(ChestData other) {
-            this.items = new ArrayList<>(other.items);
+            this.items = new ArrayList<>();
+            if (other.items != null) {
+                for (ItemStack stack : other.items) {
+                    if (stack != null) {
+                        this.items.add(new ItemStack(stack.getItemId(), stack.getQuantity(), stack.getDurability(), stack.getMaxDurability(), stack.getMetadata()));
+                    } else {
+                        this.items.add(null);
+                    }
+                }
+            }
             this.dropList = other.dropList;
         }
 
@@ -195,8 +204,9 @@ public class LootChestTemplate implements Resource<ChunkStore> {
 
             while (true) {
                 reader.consumeWhiteSpace();
+                int c = reader.peek();
 
-                if (reader.peekFor('n') || reader.peekFor('N')) {
+                if (c == 'n' || c == 'N') {
                     reader.readNullValue();
                     list.add(null);
                 } else {
@@ -216,6 +226,7 @@ public class LootChestTemplate implements Resource<ChunkStore> {
             int q = 1;
             double d = 0;
             double md = 0;
+            BsonDocument meta = null;
 
             reader.consumeWhiteSpace();
             if (reader.tryConsume('}')) return new ItemStack("air", 0, 0, 0, null);
@@ -232,6 +243,7 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                     case "q" -> q = reader.readIntValue();
                     case "d" -> d = reader.readDoubleValue();
                     case "md" -> md = reader.readDoubleValue();
+                    case "meta" -> meta = RawJsonReader.readBsonDocument(reader);
                     default -> reader.skipValue();
                 }
 
@@ -239,7 +251,7 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                 if (reader.tryConsume('}')) break;
                 reader.expect(',');
             }
-            return new ItemStack(id, q, d, md, null);
+            return new ItemStack(id, q, d, md, meta);
         }
 
         public static List<ItemStack> deserializeBsonArray(BsonArray array) {
