@@ -38,7 +38,7 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
         super("generatelc", "A command to generate a loot container");
     }
 
-    OptionalArg<String> dropListArg = this.withOptionalArg("dropList", "ID of the dropList you want to set on the loot container", ArgTypes.STRING);
+    OptionalArg<String> dropListArg = this.withOptionalArg("droplist", "ID of the dropList you want to set on the loot container", ArgTypes.STRING);
 
     @Override
     protected void execute(@Nonnull CommandContext commandContext, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {

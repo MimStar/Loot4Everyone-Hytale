@@ -59,6 +59,11 @@ public class ResetLootChestCommand extends AbstractPlayerCommand {
                 return;
             }
 
+            if (!itemContainerState.getWindows().isEmpty()) {
+                executor.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
+                return;
+            }
+
             targetBlock = new Vector3i(itemContainerState.getBlockX(),itemContainerState.getBlockY(),itemContainerState.getBlockZ());
 
             LootChestTemplate lootChestTemplate = executor.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
