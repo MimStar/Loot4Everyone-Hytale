@@ -36,7 +36,16 @@ public class PlayerLoot implements Component<EntityStore> {
         }
 
         public ChestData(ChestData other) {
-            this.items = new ArrayList<>(other.items);
+            this.items = new ArrayList<>();
+            if (other.items != null) {
+                for (ItemStack stack : other.items) {
+                    if (stack != null) {
+                        this.items.add(new ItemStack(stack.getItemId(), stack.getQuantity(), stack.getDurability(), stack.getMaxDurability(), stack.getMetadata()));
+                    } else {
+                        this.items.add(null);
+                    }
+                }
+            }
             this.discovered = other.discovered;
         }
 
@@ -63,8 +72,11 @@ public class PlayerLoot implements Component<EntityStore> {
         @Override
         public ChestData decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
             reader.consumeWhiteSpace();
-            if (reader.peekFor('"')) return parseLegacyJson(reader.readString());
-            else if (reader.peekFor('[')) {
+
+            int firstChar = reader.peek();
+
+            if (firstChar == '"') return parseLegacyJson(reader.readString());
+            else if (firstChar == '[') {
                 List<ItemStack> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
                 return new ChestData(items, !items.isEmpty());
             }
@@ -236,7 +248,9 @@ public class PlayerLoot implements Component<EntityStore> {
 
             while (true) {
                 reader.consumeWhiteSpace();
-                if (reader.peekFor('n') || reader.peekFor('N')) {
+                int c = reader.peek();
+
+                if (c == 'n' || c == 'N') {
                     reader.readNullValue();
                     list.add(null);
                 } else {
@@ -272,6 +286,7 @@ public class PlayerLoot implements Component<EntityStore> {
                     case "q" -> q = reader.readIntValue();
                     case "d" -> d = reader.readDoubleValue();
                     case "md" -> md = reader.readDoubleValue();
+                    case "meta" -> meta = RawJsonReader.readBsonDocument(reader);
                     default -> reader.skipValue();
                 }
 
