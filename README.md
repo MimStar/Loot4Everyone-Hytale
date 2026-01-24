@@ -5,25 +5,33 @@
 > incomplete, unstable, or change frequently. Please be patient and understanding as development
 > continues.
 
-Loot4Everyone is a mod that instantiate loot chests for every player like lootr or Loot4Everyone minecraft mods.  
-Only **new** generated loot chests can be detected by the system, it's better if you use my mod in a new world! But you can still use it in your current world and generate new chunks!
+## Loot4Everyone revamps loot chests so every player can have his own loot and let you create, edit, delete, reset ANY loot chests!
+
+### _⚠️ Warning ⚠️_
+
+### _If you have loot chests that are already generated, you can regenerate them with **/generatelc** to add them in the system._
 
  
 
-By default you can't break loot chests! But you can use the command **/setbreakrule <value>** (**true** of **false**) to change the value of the break loot chests rule. (False=can't break, True=can break).
+### Features
 
- 
+*   Know when you discover for the first time a loot chest! A message appear with a sound effect and you can have information about what's inside the loot chest!
+*   Loot chest griefing protection! Config it with **/setbreakrule <value>** (**true** or **false**)
+*   Random loot for every player! Config it with **/setrandomrule <value>** (**true** or **false**)
+*   Reset loot chests! Look at a loot chest and do **/resetlc** to reset this chest for all players or specify the player by adding the arg **\--player <name>** and/or the arg **\--all true** to reset all loot chests for the player provided with the arg or else for all players.
+*   Loot chest maker system! Create, edit, delete ANY loot chests!
 
-Currently my mod don't work with:
+### Loot chest maker
 
-*   Double chests (if you're not adding modded double loot chests you should be fine!)
+*   To select a loot chest or an item container, just look at it!
+*   Use any item container to generate a loot chest! With just **/generatelc** you generate automatically a loot chest based on the zone! You can add the arg **\--droplist <droplist-id>** to specify ANY droplist that your server has access (yes this should work with modded droplists!). If you prefer to make a custom droplist add items inside of the item container and just do **/generatelc** to have your custom loot chest!
+*   Edit any loot chest! You can do **/editlc** **\--droplist <droplist-id>** to change the droplist of the chest! You can also just do **/editlc** with custom loot chests to edit the items of your own droplist and after that just do **/generatelc** to confirm the changes.
+*   Delete any loot chest with **/deletelc**!
 
- 
+### Roadmap
 
-Currently i'm working on these features:
+*   It's empty...it's up to you to send a suggestion!
 
-*   Generating your own loot chests by putting items in it and activating with a command
-
-#### **This mod is in beta state, game updates can break the mod and not all the features i want are added but the mod is stable and has a solid foundation of features!** 
+#### **This mod is fully released but game updates can break the mod, so always check the mod description before a major update of the game and never use it in a pre-release unless i say you can do it!**
 
 #### **If you find bugs feel free to report them or help me fix them if you want!**
