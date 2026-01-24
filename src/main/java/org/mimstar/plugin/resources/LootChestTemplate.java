@@ -66,11 +66,13 @@ public class LootChestTemplate implements Resource<ChunkStore> {
         public ChestData decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
             reader.consumeWhiteSpace();
 
-            if (reader.peekFor('"')) {
+            int firstChar = reader.peek();
+
+            if (firstChar == '"') {
                 String jsonString = reader.readString();
                 return parseLegacyJson(jsonString);
             }
-            else if (reader.peekFor('[')) {
+            else if (firstChar == '[') {
                 List<ItemStack> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
                 return new ChestData(items, "undefined");
             }
