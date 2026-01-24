@@ -24,39 +24,40 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LootChestTemplate implements Resource<ChunkStore> {
 
-    // --- 1. Data Object ---
-    public static class ChestData {
-        public List<ItemStack> items = new ArrayList<>();
-        public String dropList = "undefined";
+    private static final String DEFAULT_DROPLIST = "undefined";
+    private static final String KEY_ITEMS = "Items";
+    private static final String KEY_DROPLIST = "DropList";
+    private static final String KEY_ID = "id";
+    private static final String KEY_Q = "q";
+    private static final String KEY_D = "d";
+    private static final String KEY_MD = "md";
+    private static final String KEY_META = "meta";
 
-        public ChestData() {}
+    public static class ChestData {
+        public List<ItemStack> items;
+        public String dropList;
+
+        public ChestData() {
+            this.items = new ArrayList<>();
+            this.dropList = DEFAULT_DROPLIST;
+        }
 
         public ChestData(List<ItemStack> items, String dropList) {
             this.items = items != null ? new ArrayList<>(items) : new ArrayList<>();
-            this.dropList = dropList != null ? dropList : "undefined";
+            this.dropList = dropList != null ? dropList : DEFAULT_DROPLIST;
         }
 
         public ChestData(ChestData other) {
-            this.items = new ArrayList<>();
-            if (other.items != null) {
-                for (ItemStack stack : other.items) {
-                    if (stack != null) {
-                        this.items.add(new ItemStack(stack.getItemId(), stack.getQuantity(), stack.getDurability(), stack.getMaxDurability(), stack.getMetadata()));
-                    } else {
-                        this.items.add(null);
-                    }
-                }
-            }
+            this.items = new ArrayList<>(other.items);
             this.dropList = other.dropList;
         }
 
         public static final Codec<ChestData> INTERNAL_CODEC = BuilderCodec.builder(ChestData.class, ChestData::new)
-                .addField(new KeyedCodec<>("Items", new ItemStackListCodec()), (d, v) -> d.items = v, d -> d.items)
-                .addField(new KeyedCodec<>("DropList", Codec.STRING), (d, v) -> d.dropList = v, d -> d.dropList)
+                .addField(new KeyedCodec<>(KEY_ITEMS, new ItemStackListCodec()), (d, v) -> d.items = v, d -> d.items)
+                .addField(new KeyedCodec<>(KEY_DROPLIST, Codec.STRING), (d, v) -> d.dropList = v, d -> d.dropList)
                 .build();
     }
 
-    //Migration Codec
     public static class LegacyChestDataCodec implements Codec<ChestData> {
 
         @Nonnull
@@ -74,19 +75,41 @@ public class LootChestTemplate implements Resource<ChunkStore> {
         @Override
         public ChestData decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
             reader.consumeWhiteSpace();
-
             int firstChar = reader.peek();
 
             if (firstChar == '"') {
-                String jsonString = reader.readString();
-                return parseLegacyJson(jsonString);
-            }
-            else if (firstChar == '[') {
+                return parseLegacyJson(reader.readString());
+            } else if (firstChar == '[') {
                 List<ItemStack> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
-                return new ChestData(items, "undefined");
-            }
-            else {
-                return ChestData.INTERNAL_CODEC.decodeJson(reader, extraInfo);
+                return new ChestData(items, DEFAULT_DROPLIST);
+            } else {
+                // Manual Streaming Parse (Fastest & Memory Efficient)
+                List<ItemStack> items = new ArrayList<>();
+                String dropList = DEFAULT_DROPLIST;
+
+                reader.expect('{');
+                reader.consumeWhiteSpace();
+
+                if (reader.tryConsume('}')) return new ChestData(items, dropList);
+
+                while (true) {
+                    reader.consumeWhiteSpace();
+                    String key = reader.readString(); // Consumes key
+                    reader.consumeWhiteSpace();
+                    reader.expect(':');
+                    reader.consumeWhiteSpace();
+
+                    switch (key) {
+                        case KEY_ITEMS, "items" -> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
+                        case KEY_DROPLIST, "dropList" -> dropList = reader.readString();
+                        default -> reader.skipValue();
+                    }
+
+                    reader.consumeWhiteSpace();
+                    if (reader.tryConsume('}')) break;
+                    reader.expect(',');
+                }
+                return new ChestData(items, dropList);
             }
         }
 
@@ -96,18 +119,20 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                 String trimmed = json.trim();
                 if (trimmed.startsWith("[")) {
                     List<ItemStack> items = ItemStackListCodec.deserializeBsonArray(BsonArray.parse(json));
-                    return new ChestData(items, "undefined");
+                    return new ChestData(items, DEFAULT_DROPLIST);
                 }
                 BsonDocument doc = BsonDocument.parse(json);
                 List<ItemStack> items = new ArrayList<>();
-                String dropList = "undefined";
+                String dropList = DEFAULT_DROPLIST;
 
                 if (doc.containsKey("items")) items = ItemStackListCodec.deserializeBsonArray(doc.getArray("items"));
+                else if (doc.containsKey(KEY_ITEMS)) items = ItemStackListCodec.deserializeBsonArray(doc.getArray(KEY_ITEMS));
+
                 if (doc.containsKey("dropList")) dropList = doc.getString("dropList").getValue();
+                else if (doc.containsKey(KEY_DROPLIST)) dropList = doc.getString(KEY_DROPLIST).getValue();
 
                 return new ChestData(items, dropList);
             } catch (Exception e) {
-                System.err.println("Error migrating loot template: " + e.getMessage());
                 return new ChestData();
             }
         }
@@ -125,24 +150,17 @@ public class LootChestTemplate implements Resource<ChunkStore> {
         }
     }
 
-    // --- 3. Main Codec ---
-    public static final BuilderCodec<LootChestTemplate> CODEC = BuilderCodec.builder(
-                    LootChestTemplate.class,
-                    LootChestTemplate::new
-            )
+    public static final BuilderCodec<LootChestTemplate> CODEC = BuilderCodec.builder(LootChestTemplate.class, LootChestTemplate::new)
             .addField(new KeyedCodec<>("Templates", new MapCodec<>(new LegacyChestDataCodec(), ConcurrentHashMap::new)),
                     (data, value) -> data.templates = new ConcurrentHashMap<>(value),
                     data -> data.templates)
             .build();
 
-    private Map<String, ChestData> templates;
+    private Map<String, ChestData> templates = new ConcurrentHashMap<>();
 
-    public LootChestTemplate() {
-        this.templates = new ConcurrentHashMap<>();
-    }
+    public LootChestTemplate() {}
 
     public LootChestTemplate(LootChestTemplate other) {
-        this.templates = new ConcurrentHashMap<>();
         for (Map.Entry<String, ChestData> entry : other.templates.entrySet()) {
             this.templates.put(entry.getKey(), new ChestData(entry.getValue()));
         }
@@ -154,38 +172,25 @@ public class LootChestTemplate implements Resource<ChunkStore> {
         return new LootChestTemplate(this);
     }
 
-    public static String getKey(int x, int y, int z) {
-        return x + "," + y + "," + z;
-    }
-
-    public boolean hasTemplate(int x, int y, int z) {
-        return templates.containsKey(getKey(x, y, z));
-    }
-
+    public static String getKey(int x, int y, int z) { return x + "," + y + "," + z; }
+    public boolean hasTemplate(int x, int y, int z) { return templates.containsKey(getKey(x, y, z)); }
     public List<ItemStack> getTemplate(int x, int y, int z) {
         ChestData data = templates.get(getKey(x, y, z));
         return data != null ? data.items : new ArrayList<>();
     }
-
     public String getDropList(int x, int y, int z) {
         ChestData data = templates.get(getKey(x, y, z));
-        return data != null ? data.dropList : "undefined";
+        return data != null ? data.dropList : DEFAULT_DROPLIST;
     }
-
     public void setDropList(int x, int y, int z, String dropList) {
         ChestData data = templates.get(getKey(x, y, z));
-        if (data != null) {
-            data.dropList = dropList != null ? dropList : "undefined";
-        }
+        if (data != null) data.dropList = dropList != null ? dropList : DEFAULT_DROPLIST;
     }
-
     public void saveTemplate(int x, int y, int z, List<ItemStack> items, String dropList) {
         templates.put(getKey(x, y, z), new ChestData(items, dropList));
     }
+    public void removeTemplate(int x, int y, int z){ templates.remove(getKey(x, y, z)); }
 
-    public void removeTemplate(int x, int y, int z){
-        templates.remove(getKey(x, y, z));
-    }
 
     public static class ItemStackListCodec implements Codec<List<ItemStack>> {
         @Nonnull
@@ -222,14 +227,15 @@ public class LootChestTemplate implements Resource<ChunkStore> {
 
         private ItemStack decodeItemStackJson(RawJsonReader reader) throws IOException {
             reader.expect('{');
+            reader.consumeWhiteSpace();
+
+            if (reader.tryConsume('}')) return new ItemStack("air", 0, 0, 0, null);
+
             String id = "";
             int q = 1;
             double d = 0;
             double md = 0;
             BsonDocument meta = null;
-
-            reader.consumeWhiteSpace();
-            if (reader.tryConsume('}')) return new ItemStack("air", 0, 0, 0, null);
 
             while (true) {
                 reader.consumeWhiteSpace();
@@ -239,11 +245,13 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                 reader.consumeWhiteSpace();
 
                 switch (key) {
-                    case "id" -> id = reader.readString();
-                    case "q" -> q = reader.readIntValue();
-                    case "d" -> d = reader.readDoubleValue();
-                    case "md" -> md = reader.readDoubleValue();
-                    case "meta" -> meta = RawJsonReader.readBsonDocument(reader);
+                    case KEY_ID -> {
+                        id = reader.readString().intern();
+                    }
+                    case KEY_Q -> q = reader.readIntValue();
+                    case KEY_D -> d = reader.readDoubleValue();
+                    case KEY_MD -> md = reader.readDoubleValue();
+                    case KEY_META -> meta = RawJsonReader.readBsonDocument(reader);
                     default -> reader.skipValue();
                 }
 
@@ -262,11 +270,12 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                 if (value.isDocument()) {
                     try {
                         BsonDocument doc = value.asDocument();
-                        String itemId = doc.getString("id").getValue();
-                        int quantity = doc.getInt32("q").getValue();
-                        double durability = doc.getDouble("d").getValue();
-                        double maxDurability = doc.getDouble("md").getValue();
-                        BsonDocument metadata = doc.containsKey("meta") ? doc.getDocument("meta") : null;
+                        // Intern ID here as well
+                        String itemId = doc.getString(KEY_ID).getValue().intern();
+                        int quantity = doc.getInt32(KEY_Q).getValue();
+                        double durability = doc.getDouble(KEY_D).getValue();
+                        double maxDurability = doc.getDouble(KEY_MD).getValue();
+                        BsonDocument metadata = doc.containsKey(KEY_META) ? doc.getDocument(KEY_META) : null;
                         items.add(new ItemStack(itemId, quantity, durability, maxDurability, metadata));
                     } catch (Exception ignored) {}
                 }
@@ -281,11 +290,11 @@ public class LootChestTemplate implements Resource<ChunkStore> {
             for (ItemStack stack : items) {
                 if (stack != null) {
                     BsonDocument doc = new BsonDocument();
-                    doc.append("id", new BsonString(stack.getItemId()));
-                    doc.append("q", new BsonInt32(stack.getQuantity()));
-                    doc.append("d", new BsonDouble(stack.getDurability()));
-                    doc.append("md", new BsonDouble(stack.getMaxDurability()));
-                    if (stack.getMetadata() != null) doc.append("meta", stack.getMetadata());
+                    doc.append(KEY_ID, new BsonString(stack.getItemId()));
+                    doc.append(KEY_Q, new BsonInt32(stack.getQuantity()));
+                    doc.append(KEY_D, new BsonDouble(stack.getDurability()));
+                    doc.append(KEY_MD, new BsonDouble(stack.getMaxDurability()));
+                    if (stack.getMetadata() != null) doc.append(KEY_META, stack.getMetadata());
                     array.add(doc);
                 } else {
                     array.add(new BsonNull());

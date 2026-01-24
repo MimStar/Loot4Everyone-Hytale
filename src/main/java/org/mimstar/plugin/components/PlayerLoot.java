@@ -24,6 +24,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerLoot implements Component<EntityStore> {
 
+    private static final String KEY_ITEMS = "Items";
+    private static final String KEY_DISCOVERED = "Discovered";
+    private static final String KEY_ID = "id";
+    private static final String KEY_Q = "q";
+    private static final String KEY_D = "d";
+    private static final String KEY_MD = "md";
+    private static final String KEY_META = "meta";
+
     public static class ChestData {
         public List<ItemStack> items = new ArrayList<>();
         public boolean discovered = false;
@@ -36,22 +44,13 @@ public class PlayerLoot implements Component<EntityStore> {
         }
 
         public ChestData(ChestData other) {
-            this.items = new ArrayList<>();
-            if (other.items != null) {
-                for (ItemStack stack : other.items) {
-                    if (stack != null) {
-                        this.items.add(new ItemStack(stack.getItemId(), stack.getQuantity(), stack.getDurability(), stack.getMaxDurability(), stack.getMetadata()));
-                    } else {
-                        this.items.add(null);
-                    }
-                }
-            }
+            this.items = new ArrayList<>(other.items);
             this.discovered = other.discovered;
         }
 
         public static final Codec<ChestData> INTERNAL_CODEC = BuilderCodec.builder(ChestData.class, ChestData::new)
-                .addField(new KeyedCodec<>("Items", new ItemStackListCodec()), (d, v) -> d.items = v, d -> d.items)
-                .addField(new KeyedCodec<>("Discovered", Codec.BOOLEAN), (d, v) -> d.discovered = v, d -> d.discovered)
+                .addField(new KeyedCodec<>(KEY_ITEMS, new ItemStackListCodec()), (d, v) -> d.items = v, d -> d.items)
+                .addField(new KeyedCodec<>(KEY_DISCOVERED, Codec.BOOLEAN), (d, v) -> d.discovered = v, d -> d.discovered)
                 .build();
     }
 
@@ -59,12 +58,14 @@ public class PlayerLoot implements Component<EntityStore> {
         @Nonnull
         @Override
         public ChestData decode(@Nonnull BsonValue value, @Nonnull ExtraInfo extraInfo) {
-            if (value.isString()) return parseLegacyJson(value.asString().getValue());
-            else if (value.isArray()) {
+            if (value.isString()) {
+                return parseLegacyJson(value.asString().getValue());
+            } else if (value.isArray()) {
                 List<ItemStack> items = ItemStackListCodec.deserializeBsonArray(value.asArray());
                 return new ChestData(items, !items.isEmpty());
+            } else if (value.isDocument()) {
+                return ChestData.INTERNAL_CODEC.decode(value, extraInfo);
             }
-            else if (value.isDocument()) return ChestData.INTERNAL_CODEC.decode(value, extraInfo);
             return new ChestData();
         }
 
@@ -72,15 +73,41 @@ public class PlayerLoot implements Component<EntityStore> {
         @Override
         public ChestData decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
             reader.consumeWhiteSpace();
-
             int firstChar = reader.peek();
 
-            if (firstChar == '"') return parseLegacyJson(reader.readString());
-            else if (firstChar == '[') {
+            if (firstChar == '"') {
+                return parseLegacyJson(reader.readString());
+            } else if (firstChar == '[') {
                 List<ItemStack> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
                 return new ChestData(items, !items.isEmpty());
+            } else {
+                List<ItemStack> items = new ArrayList<>();
+                boolean discovered = false;
+
+                reader.expect('{');
+                reader.consumeWhiteSpace();
+
+                if (reader.tryConsume('}')) return new ChestData(items, discovered);
+
+                while (true) {
+                    reader.consumeWhiteSpace();
+                    String key = reader.readString();
+                    reader.consumeWhiteSpace();
+                    reader.expect(':');
+                    reader.consumeWhiteSpace();
+
+                    switch (key) {
+                        case KEY_ITEMS -> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
+                        case KEY_DISCOVERED -> discovered = reader.readBooleanValue();
+                        default -> reader.skipValue();
+                    }
+
+                    reader.consumeWhiteSpace();
+                    if (reader.tryConsume('}')) break;
+                    reader.expect(',');
+                }
+                return new ChestData(items, discovered);
             }
-            else return ChestData.INTERNAL_CODEC.decodeJson(reader, extraInfo);
         }
 
         private ChestData parseLegacyJson(String json) {
@@ -95,11 +122,11 @@ public class PlayerLoot implements Component<EntityStore> {
                 List<ItemStack> items = new ArrayList<>();
                 boolean discovered = false;
 
-                if (doc.containsKey("Items")) {
-                    items = ItemStackListCodec.deserializeBsonArray(doc.getArray("Items"));
-                    if (!doc.containsKey("Discovered")) discovered = !items.isEmpty();
+                if (doc.containsKey(KEY_ITEMS)) {
+                    items = ItemStackListCodec.deserializeBsonArray(doc.getArray(KEY_ITEMS));
+                    if (!doc.containsKey(KEY_DISCOVERED)) discovered = !items.isEmpty();
                 }
-                if (doc.containsKey("Discovered")) discovered = doc.getBoolean("Discovered").getValue();
+                if (doc.containsKey(KEY_DISCOVERED)) discovered = doc.getBoolean(KEY_DISCOVERED).getValue();
 
                 return new ChestData(items, discovered);
             } catch (Exception e) {
@@ -169,9 +196,7 @@ public class PlayerLoot implements Component<EntityStore> {
     }
 
     public void resetChest(int x, int y, int z, String world_name) {
-
         lootData.remove(getKey(x,y,z,world_name));
-
         lootData.remove(getDeprecatedKey(x,y,z));
     }
 
@@ -187,10 +212,8 @@ public class PlayerLoot implements Component<EntityStore> {
         }
 
         ChestData data = lootData.get(key);
-
         return data == null || data.items.isEmpty();
     }
-
 
     public boolean isDiscovered(int x, int y, int z, String world_name) {
         if (!lootData.containsKey(getKey(x, y, z, world_name)) && hasDeprecatedData(x, y, z)) {
@@ -265,14 +288,14 @@ public class PlayerLoot implements Component<EntityStore> {
 
         private ItemStack decodeItemStackJson(RawJsonReader reader) throws IOException {
             reader.expect('{');
+            reader.consumeWhiteSpace();
+            if (reader.tryConsume('}')) return new ItemStack("air", 0, 0, 0, null);
+
             String id = "air";
             int q = 1;
             double d = 0;
             double md = 0;
             BsonDocument meta = null;
-
-            reader.consumeWhiteSpace();
-            if (reader.tryConsume('}')) return new ItemStack("air", 0, 0, 0, null);
 
             while (true) {
                 reader.consumeWhiteSpace();
@@ -282,11 +305,11 @@ public class PlayerLoot implements Component<EntityStore> {
                 reader.consumeWhiteSpace();
 
                 switch (key) {
-                    case "id" -> id = reader.readString();
-                    case "q" -> q = reader.readIntValue();
-                    case "d" -> d = reader.readDoubleValue();
-                    case "md" -> md = reader.readDoubleValue();
-                    case "meta" -> meta = RawJsonReader.readBsonDocument(reader);
+                    case KEY_ID -> id = reader.readString().intern();
+                    case KEY_Q -> q = reader.readIntValue();
+                    case KEY_D -> d = reader.readDoubleValue();
+                    case KEY_MD -> md = reader.readDoubleValue();
+                    case KEY_META -> meta = RawJsonReader.readBsonDocument(reader);
                     default -> reader.skipValue();
                 }
 
@@ -305,11 +328,11 @@ public class PlayerLoot implements Component<EntityStore> {
                 if (value.isDocument()) {
                     try {
                         BsonDocument doc = value.asDocument();
-                        String itemId = doc.getString("id").getValue();
-                        int quantity = doc.getInt32("q").getValue();
-                        double durability = doc.getDouble("d").getValue();
-                        double maxDurability = doc.getDouble("md").getValue();
-                        BsonDocument metadata = doc.containsKey("meta") ? doc.getDocument("meta") : null;
+                        String itemId = doc.getString(KEY_ID).getValue().intern();
+                        int quantity = doc.getInt32(KEY_Q).getValue();
+                        double durability = doc.getDouble(KEY_D).getValue();
+                        double maxDurability = doc.getDouble(KEY_MD).getValue();
+                        BsonDocument metadata = doc.containsKey(KEY_META) ? doc.getDocument(KEY_META) : null;
                         items.add(new ItemStack(itemId, quantity, durability, maxDurability, metadata));
                     } catch (Exception ignored) {}
                 }
@@ -324,11 +347,11 @@ public class PlayerLoot implements Component<EntityStore> {
             for (ItemStack stack : items) {
                 if (stack != null) {
                     BsonDocument doc = new BsonDocument();
-                    doc.append("id", new BsonString(stack.getItemId()));
-                    doc.append("q", new BsonInt32(stack.getQuantity()));
-                    doc.append("d", new BsonDouble(stack.getDurability()));
-                    doc.append("md", new BsonDouble(stack.getMaxDurability()));
-                    if (stack.getMetadata() != null) doc.append("meta", stack.getMetadata());
+                    doc.append(KEY_ID, new BsonString(stack.getItemId()));
+                    doc.append(KEY_Q, new BsonInt32(stack.getQuantity()));
+                    doc.append(KEY_D, new BsonDouble(stack.getDurability()));
+                    doc.append(KEY_MD, new BsonDouble(stack.getMaxDurability()));
+                    if (stack.getMetadata() != null) doc.append(KEY_META, stack.getMetadata());
                     array.add(doc);
                 } else {
                     array.add(new BsonNull());
