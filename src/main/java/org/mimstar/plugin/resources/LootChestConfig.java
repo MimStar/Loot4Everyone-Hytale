@@ -21,8 +21,8 @@ public class LootChestConfig implements Resource<ChunkStore> {
                     ,(data, value) -> data.isLootRandom = value,
                     data -> data.isLootRandom)
             .addField(new KeyedCodec<>("IsMessageAppear", Codec.BOOLEAN)
-                    ,(data, value) -> data.isLootRandom = value,
-                    data -> data.isLootRandom)
+                    ,(data, value) -> data.isMessageAppear = value,
+                    data -> data.isMessageAppear)
             .build();
 
     private boolean canPlayerBreakLootChests;
