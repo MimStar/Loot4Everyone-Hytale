@@ -26,6 +26,7 @@ import org.mimstar.plugin.resources.LootChestConfig;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
     private int tickTimer = 0;
@@ -86,8 +87,14 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                                 ChunkGenerator chunkGenerator = (ChunkGenerator) world.getChunkStore().getGenerator();
                                                 int seed = (int) world.getWorldConfig().getSeed();
 
-                                                ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, x, z);
+                                                ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, x, z); //Ex: Zone1_Tier1
                                                 String zoneName = result.getZoneResult().getZone().name();
+
+                                                if (zoneName.contains("Tier5")){
+                                                    int randomTier = ThreadLocalRandom.current().nextInt(1,5);
+                                                    zoneName = zoneName.replace("Tier5","Tier" + randomTier);
+                                                }
+
                                                 dropListName = zoneName.replace("_", "_Encounters_");
 
                                                 lootChestTemplate.setDropList(x, y, z, dropListName);

@@ -79,6 +79,13 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                         String droplist = lootChestTemplate.getDropList(target.getX(),target.getY(),target.getZ());
                         if (droplist != null && !droplist.equals("undefined")) {
                             if (!droplist.equals("custom")) {
+
+                                if (droplist.contains("Tier5")){
+                                    int randomTier = ThreadLocalRandom.current().nextInt(1,5);
+                                    droplist = droplist.replace("Tier5","Tier" + randomTier);
+                                    lootChestTemplate.setDropList(target.getX(), target.getY(), target.getZ(), droplist);
+                                }
+
                                 List<ItemStack> stacks = ItemModule.get().getRandomItemDrops(droplist);
                                 if (!stacks.isEmpty()) {
                                     short capacity = itemContainerState.getItemContainer().getCapacity();

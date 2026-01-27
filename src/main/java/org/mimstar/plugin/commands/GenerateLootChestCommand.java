@@ -119,6 +119,11 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
                     ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, targetBlock.getX(), targetBlock.getZ());
                     String zoneName = result.getZoneResult().getZone().name(); // Ex: Zone1_Tier1
 
+                    if (zoneName.contains("Tier5")){
+                        int randomTier = ThreadLocalRandom.current().nextInt(1,5);
+                        zoneName = zoneName.replace("Tier5","Tier" + randomTier);
+                    }
+
                     String dropListName = zoneName.replace("_", "_Encounters_");
 
                     List<ItemStack> stacks = ItemModule.get().getRandomItemDrops(dropListName);
