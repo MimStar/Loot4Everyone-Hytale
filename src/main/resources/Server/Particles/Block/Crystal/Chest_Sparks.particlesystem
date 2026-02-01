@@ -1,0 +1,15 @@
+{
+  "Spawners": [
+    {
+      "SpawnerId": "Chest_Sparks",
+      "FixedRotation": true,
+      "PositionOffset": {
+        "X": 0,
+        "Z": 0
+      }
+    }
+  ],
+  "BoundingRadius": 2,
+  "CullDistance": 20,
+  "LifeSpan": 3
+}

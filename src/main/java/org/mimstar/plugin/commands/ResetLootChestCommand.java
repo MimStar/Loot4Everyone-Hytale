@@ -5,10 +5,11 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.NameMatching;
+import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
-import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.command.system.basecommands.AbstractAsyncCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -30,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-public class ResetLootChestCommand extends AbstractPlayerCommand {
+public class ResetLootChestCommand extends AbstractAsyncCommand {
     private static final int BATCH_SIZE = 20;
 
     public ResetLootChestCommand() {
@@ -39,121 +40,153 @@ public class ResetLootChestCommand extends AbstractPlayerCommand {
 
     OptionalArg<String> playerArg = this.withOptionalArg("player", "Name or UUID of the player", ArgTypes.STRING);
     OptionalArg<Boolean> boolArg = this.withOptionalArg("all", "True to reset all loot chests", ArgTypes.BOOLEAN);
+    OptionalArg<World> worldArg = this.withOptionalArg("world","ID of the world where the config is stored", ArgTypes.WORLD);
 
+    @Nonnull
     @Override
-    protected void execute(@Nonnull CommandContext commandContext, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
+    protected CompletableFuture<Void> executeAsync(@Nonnull CommandContext commandContext) {
         String playerIdentifier = playerArg.provided(commandContext) ? playerArg.get(commandContext) : null;
         boolean resetAllChests = boolArg.provided(commandContext) && boolArg.get(commandContext);
 
-        Player executor = store.getComponent(ref, Player.getComponentType());
-        String worldName = executor.getWorld().getName();
+        Ref<EntityStore> ref;
+        Store<EntityStore> store;
+        World world = null;
 
-        Consumer<PlayerLoot> resetAction;
-
-        if (!resetAllChests) {
-            Vector3i targetBlock = TargetUtil.getTargetBlock(ref, 10.0, store);
-
-            BlockState state = world.getState(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), true);
-            if (!(state instanceof ItemContainerState itemContainerState)) {
-                executor.sendMessage(Message.raw("Please look at a loot container!"));
-                return;
+        if (commandContext.isPlayer()) {
+            UUID player_uuid = commandContext.sender().getUuid();
+            PlayerRef playerRef = Universe.get().getPlayer(player_uuid);
+            if (playerRef == null){
+                commandContext.sendMessage(Message.raw("Player not found"));
+                return CompletableFuture.completedFuture(null);
             }
 
-            if (!itemContainerState.getWindows().isEmpty()) {
-                executor.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
-                return;
-            }
-
-            targetBlock = new Vector3i(itemContainerState.getBlockX(),itemContainerState.getBlockY(),itemContainerState.getBlockZ());
-
-            LootChestTemplate lootChestTemplate = executor.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
-            if (targetBlock == null || !lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {
-                executor.sendMessage(Message.raw("Please look at a valid loot chest to reset it (or use --all true for all chests)."));
-                return;
-            }
-
-            final Vector3i finalTargetBlock = targetBlock;
-            resetAction = (playerLoot) -> {
-                if (!playerLoot.isFirstTime(finalTargetBlock.getX(), finalTargetBlock.getY(), finalTargetBlock.getZ(), worldName)) {
-                    playerLoot.resetChest(finalTargetBlock.getX(), finalTargetBlock.getY(), finalTargetBlock.getZ(), worldName);
-                }
-            };
+            world = Universe.get().getWorld(playerRef.getWorldUuid());
+            ref = playerRef.getReference();
         } else {
-            resetAction = PlayerLoot::resetAllChests;
+            ref = null;
         }
 
-        Set<UUID> targetsToProcess = new HashSet<>();
-        PlayerStorage storage = Universe.get().getPlayerStorage();
-
-        try {
-            if (playerIdentifier != null) {
-                final UUID[] targetUuid = {null};
-                try {
-                    targetUuid[0] = UUID.fromString(playerIdentifier);
-                    targetsToProcess.add(targetUuid[0]);
-                } catch (IllegalArgumentException e) {
-                    String searchName = playerIdentifier.toLowerCase();
-
-                    PlayerRef targetPlayerRef = Universe.get().getPlayerByUsername(playerIdentifier, NameMatching.EXACT);
-                    if (targetPlayerRef != null) {
-                        targetUuid[0] = targetPlayerRef.getUuid();
-                        targetsToProcess.add(targetUuid[0]);
-                    } else {
-                        //executor.sendMessage(Message.raw("Player '" + playerIdentifier + "' is not online. Searching offline players..."));
-
-                        Set<UUID> allPlayerUuids = storage.getPlayers();
-                        List<CompletableFuture<UUID>> searchFutures = new ArrayList<>();
-
-                        for (UUID uuid : allPlayerUuids) {
-                            searchFutures.add(
-                                    storage.load(uuid)
-                                            .thenApply(holder -> {
-                                                Nameplate nameplate = holder.getComponent(Nameplate.getComponentType());
-                                                if (nameplate != null && nameplate.getText().toLowerCase().equals(searchName)) {
-                                                    return uuid;
-                                                }
-                                                return null;
-                                            })
-                                            .exceptionally(ex -> null)
-                            );
-                        }
-
-                        // Wait for all searches to complete
-                        CompletableFuture.allOf(searchFutures.toArray(new CompletableFuture[0]))
-                                .thenAccept(v -> {
-                                    for (CompletableFuture<UUID> future : searchFutures) {
-                                        try {
-                                            UUID foundUuid = future.get();
-                                            if (foundUuid != null) {
-                                                targetUuid[0] = foundUuid;
-                                                break;
-                                            }
-                                        } catch (Exception _) {
-                                        }
-                                    }
-
-                                    if (targetUuid[0] != null) {
-                                        targetsToProcess.add(targetUuid[0]);
-                                        processTargets(executor, storage, resetAction, targetsToProcess,store);
-                                    } else {
-                                        executor.sendMessage(Message.raw("Could not find player " + playerIdentifier));
-                                    }
-                                });
-                        return;
-                    }
-                }
-            } else {
-                targetsToProcess.addAll(storage.getPlayers());
+        if (world == null || commandContext.provided(worldArg)){
+            if (commandContext.provided(worldArg)){
+                world = worldArg.get(commandContext);
             }
-        } catch (IOException e) {
-            executor.sendMessage(Message.raw("Error retrieving player list: " + e.getMessage()));
-            return;
+            else{
+                commandContext.sendMessage(Message.raw("Please provide a world ID"));
+                return CompletableFuture.completedFuture(null);
+            }
         }
 
-        processTargets(executor, storage, resetAction, targetsToProcess,store);
+        store = world.getEntityStore().getStore();
+        String worldName = world.getName();
+
+        World finalWorld = world;
+        return this.runAsync(commandContext, () -> {
+            Consumer<PlayerLoot> resetAction;
+            if (!resetAllChests && commandContext.isPlayer()) {
+                Vector3i targetBlock = TargetUtil.getTargetBlock(ref, 10.0, store);
+
+                BlockState state = finalWorld.getState(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), true);
+                if (!(state instanceof ItemContainerState itemContainerState)) {
+                    commandContext.sendMessage(Message.raw("Please look at a loot container!"));
+                    return;
+                }
+
+                if (!itemContainerState.getWindows().isEmpty()) {
+                    commandContext.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
+                    return;
+                }
+
+                targetBlock = new Vector3i(itemContainerState.getBlockX(),itemContainerState.getBlockY(),itemContainerState.getBlockZ());
+
+                LootChestTemplate lootChestTemplate = finalWorld.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
+                if (targetBlock == null || !lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {
+                    commandContext.sendMessage(Message.raw("Please look at a valid loot chest to reset it (or use --all true for all chests)."));
+                    return;
+                }
+
+                final Vector3i finalTargetBlock = targetBlock;
+                resetAction = (playerLoot) -> {
+                    if (!playerLoot.isFirstTime(finalTargetBlock.getX(), finalTargetBlock.getY(), finalTargetBlock.getZ(), worldName)) {
+                        playerLoot.resetChest(finalTargetBlock.getX(), finalTargetBlock.getY(), finalTargetBlock.getZ(), worldName);
+                    }
+                };
+            } else {
+                resetAction = PlayerLoot::resetAllChests;
+            }
+
+            Set<UUID> targetsToProcess = new HashSet<>();
+            PlayerStorage storage = Universe.get().getPlayerStorage();
+
+            try {
+                if (playerIdentifier != null) {
+                    final UUID[] targetUuid = {null};
+                    try {
+                        targetUuid[0] = UUID.fromString(playerIdentifier);
+                        targetsToProcess.add(targetUuid[0]);
+                    } catch (IllegalArgumentException e) {
+                        String searchName = playerIdentifier.toLowerCase();
+
+                        PlayerRef targetPlayerRef = Universe.get().getPlayerByUsername(playerIdentifier, NameMatching.EXACT);
+                        if (targetPlayerRef != null) {
+                            targetUuid[0] = targetPlayerRef.getUuid();
+                            targetsToProcess.add(targetUuid[0]);
+                        } else {
+                            //executor.sendMessage(Message.raw("Player '" + playerIdentifier + "' is not online. Searching offline players..."));
+
+                            Set<UUID> allPlayerUuids = storage.getPlayers();
+                            List<CompletableFuture<UUID>> searchFutures = new ArrayList<>();
+
+                            for (UUID uuid : allPlayerUuids) {
+                                searchFutures.add(
+                                        storage.load(uuid)
+                                                .thenApply(holder -> {
+                                                    Nameplate nameplate = holder.getComponent(Nameplate.getComponentType());
+                                                    if (nameplate != null && nameplate.getText().toLowerCase().equals(searchName)) {
+                                                        return uuid;
+                                                    }
+                                                    return null;
+                                                })
+                                                .exceptionally(ex -> null)
+                                );
+                            }
+
+                            // Wait for all searches to complete
+                            CompletableFuture.allOf(searchFutures.toArray(new CompletableFuture[0]))
+                                    .thenAccept(v -> {
+                                        for (CompletableFuture<UUID> future : searchFutures) {
+                                            try {
+                                                UUID foundUuid = future.get();
+                                                if (foundUuid != null) {
+                                                    targetUuid[0] = foundUuid;
+                                                    break;
+                                                }
+                                            } catch (Exception _) {
+                                            }
+                                        }
+
+                                        if (targetUuid[0] != null) {
+                                            targetsToProcess.add(targetUuid[0]);
+                                            processTargets(commandContext, storage, resetAction, targetsToProcess,store);
+                                        } else {
+                                            commandContext.sendMessage(Message.raw("Could not find player " + playerIdentifier));
+                                        }
+                                    });
+                            return;
+                        }
+                    }
+                } else {
+                    targetsToProcess.addAll(storage.getPlayers());
+                }
+            } catch (IOException e) {
+                commandContext.sendMessage(Message.raw("Error retrieving player list: " + e.getMessage()));
+                return;
+            }
+
+            processTargets(commandContext, storage, resetAction, targetsToProcess,store);
+        }, world);
     }
 
-    private void processTargets(Player executor, PlayerStorage storage, Consumer<PlayerLoot> resetAction, Set<UUID> targetsToProcess, Store<EntityStore> store) {
+    private void processTargets(CommandContext commandContext, PlayerStorage storage, Consumer<PlayerLoot> resetAction, Set<UUID> targetsToProcess, Store<EntityStore> store) {
         //executor.sendMessage(Message.raw("Starting loot reset for " + targetsToProcess.size() + " players..."));
 
         List<UUID> offlinePlayers = new ArrayList<>();
@@ -184,15 +217,15 @@ public class ResetLootChestCommand extends AbstractPlayerCommand {
         if (!offlinePlayers.isEmpty()) {
             //executor.sendMessage(Message.raw("Processing " + offlinePlayers.size() + " offline players in background..."));
             AtomicInteger processedCount = new AtomicInteger(0);
-            recursiveBatchProcess(offlinePlayers.iterator(), storage, resetAction, executor, processedCount);
+            recursiveBatchProcess(offlinePlayers.iterator(), storage, resetAction, commandContext, processedCount);
         } else {
             //executor.sendMessage(Message.raw("All requested operations completed."));
         }
 
-        executor.sendMessage(Message.raw("Reset complete!"));
+        commandContext.sendMessage(Message.raw("Reset complete!"));
     }
 
-    private void recursiveBatchProcess(Iterator<UUID> playerIterator, PlayerStorage storage, Consumer<PlayerLoot> action, Player executor, AtomicInteger counter) {
+    private void recursiveBatchProcess(Iterator<UUID> playerIterator, PlayerStorage storage, Consumer<PlayerLoot> action, CommandContext commandContext, AtomicInteger counter) {
         List<CompletableFuture<Void>> batchFutures = new ArrayList<>();
 
         // Fill the current batch
@@ -221,6 +254,6 @@ public class ResetLootChestCommand extends AbstractPlayerCommand {
         }
 
         CompletableFuture.allOf(batchFutures.toArray(new CompletableFuture[0]))
-                .thenRun(() -> recursiveBatchProcess(playerIterator, storage, action, executor, counter));
+                .thenRun(() -> recursiveBatchProcess(playerIterator, storage, action, commandContext, counter));
     }
 }

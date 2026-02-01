@@ -6,10 +6,12 @@ import com.hypixel.hytale.component.spatial.SpatialResource;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.protocol.SoundCategory;
+import com.hypixel.hytale.protocol.WorldParticle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.ParticleUtil;
 import com.hypixel.hytale.server.core.universe.world.SoundUtil;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockStateModule;
 import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
@@ -26,6 +28,7 @@ import org.mimstar.plugin.resources.LootChestConfig;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
@@ -106,11 +109,47 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                                             if (lootChestConfig.isMessageAppear()){
                                                 EventTitleUtil.showEventTitleToPlayer(playerRef, Message.raw("New loot chest discovered!"), Message.raw(dropListName), true);
-
                                                 int soundEventIndex = TempAssetIdUtil.getSoundEventIndex("SFX_Memories_Unlock_Local");
                                                 if (soundEventIndex > 0) {
                                                     SoundUtil.playSoundEvent2dToPlayer(playerRef, soundEventIndex, SoundCategory.SFX);
                                                 }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ObjectList<Ref<ChunkStore>> objectList1 = SpatialResource.getThreadLocalReferenceList();
+                spatial.getSpatialStructure().collect(playerPos, 15.0, objectList1);
+                if (!objectList1.isEmpty()){
+                    for (Ref<ChunkStore> ref : objectList1){
+                        if (ref.isValid()){
+                            BlockModule.BlockStateInfo blockInfo = ref.getStore().getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+                            if (blockInfo != null) {
+                                Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
+                                if (chunkRef != null && chunkRef.isValid()) {
+                                    ItemContainerState itemContainerState = ref.getStore().getComponent(ref,
+                                            BlockStateModule.get().getComponentType(ItemContainerState.class));
+
+                                    if (itemContainerState != null) {
+
+                                        int x = itemContainerState.getBlockX();
+                                        int y = itemContainerState.getBlockY();
+                                        int z = itemContainerState.getBlockZ();
+
+                                        LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore()
+                                                .getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
+
+                                        if (lootChestTemplate != null && lootChestTemplate.hasTemplate(x, y, z)) {
+                                            if (playerLoot.isFirstTime(x, y, z, world.getName())) {
+                                                double particle_x = itemContainerState.getBlockX() + 0.5;
+                                                double particle_y = itemContainerState.getBlockY() + 1.5;
+                                                double particle_z = itemContainerState.getBlockZ() + 0.5;
+
+                                                ParticleUtil.spawnParticleEffect("Chest_Sparks", new Vector3d(particle_x, particle_y, particle_z), Collections.singletonList(player.getReference()), commandBuffer);
                                             }
                                         }
                                     }
