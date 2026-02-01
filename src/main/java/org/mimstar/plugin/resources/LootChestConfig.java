@@ -23,22 +23,28 @@ public class LootChestConfig implements Resource<ChunkStore> {
             .addField(new KeyedCodec<>("IsMessageAppear", Codec.BOOLEAN)
                     ,(data, value) -> data.isMessageAppear = value,
                     data -> data.isMessageAppear)
+            .addField(new KeyedCodec<>("IsParticlesAppear", Codec.BOOLEAN)
+                    ,(data, value) -> data.isParticlesAppear = value,
+                    data -> data.isParticlesAppear)
             .build();
 
     private boolean canPlayerBreakLootChests;
     private boolean isLootRandom;
     private boolean isMessageAppear;
+    private boolean isParticlesAppear;
 
     public LootChestConfig(){
         this.canPlayerBreakLootChests = false;
         this.isLootRandom = true;
         this.isMessageAppear = true;
+        this.isParticlesAppear = true;
     }
 
     public LootChestConfig(LootChestConfig other){
         this.canPlayerBreakLootChests = other.canPlayerBreakLootChests;
         this.isLootRandom = other.isLootRandom;
         this.isMessageAppear = other.isMessageAppear;
+        this.isParticlesAppear = other.isParticlesAppear;
     }
 
     @Nullable
@@ -70,4 +76,8 @@ public class LootChestConfig implements Resource<ChunkStore> {
     public void setMessageAppear(boolean new_value){
         isMessageAppear = new_value;
     }
+
+    public boolean isParticlesAppear(){ return isParticlesAppear; }
+
+    public void setParticlesAppear(boolean new_value){ isParticlesAppear = new_value; }
 }

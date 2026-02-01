@@ -64,6 +64,8 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                 ObjectList<Ref<ChunkStore>> objectList = SpatialResource.getThreadLocalReferenceList();
                 spatial.getSpatialStructure().collect(playerPos, 5.0, objectList);
 
+                LootChestConfig lootChestConfig = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
+
                 if (!objectList.isEmpty()) {
                     Ref<ChunkStore> ref = objectList.get(0);
                     if (ref.isValid()) {
@@ -105,8 +107,6 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                                             playerLoot.setDiscovered(x, y, z, world.getName(), true);
 
-                                            LootChestConfig lootChestConfig = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
-
                                             if (lootChestConfig.isMessageAppear()){
                                                 EventTitleUtil.showEventTitleToPlayer(playerRef, Message.raw("New loot chest discovered!"), Message.raw(dropListName), true);
                                                 int soundEventIndex = TempAssetIdUtil.getSoundEventIndex("SFX_Memories_Unlock_Local");
@@ -121,35 +121,36 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                         }
                     }
                 }
+                if (lootChestConfig.isParticlesAppear()) {
+                    ObjectList<Ref<ChunkStore>> objectList1 = SpatialResource.getThreadLocalReferenceList();
+                    spatial.getSpatialStructure().collect(playerPos, 15.0, objectList1);
+                    if (!objectList1.isEmpty()) {
+                        for (Ref<ChunkStore> ref : objectList1) {
+                            if (ref.isValid()) {
+                                BlockModule.BlockStateInfo blockInfo = ref.getStore().getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+                                if (blockInfo != null) {
+                                    Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
+                                    if (chunkRef != null && chunkRef.isValid()) {
+                                        ItemContainerState itemContainerState = ref.getStore().getComponent(ref,
+                                                BlockStateModule.get().getComponentType(ItemContainerState.class));
 
-                ObjectList<Ref<ChunkStore>> objectList1 = SpatialResource.getThreadLocalReferenceList();
-                spatial.getSpatialStructure().collect(playerPos, 15.0, objectList1);
-                if (!objectList1.isEmpty()){
-                    for (Ref<ChunkStore> ref : objectList1){
-                        if (ref.isValid()){
-                            BlockModule.BlockStateInfo blockInfo = ref.getStore().getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-                            if (blockInfo != null) {
-                                Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
-                                if (chunkRef != null && chunkRef.isValid()) {
-                                    ItemContainerState itemContainerState = ref.getStore().getComponent(ref,
-                                            BlockStateModule.get().getComponentType(ItemContainerState.class));
+                                        if (itemContainerState != null) {
 
-                                    if (itemContainerState != null) {
+                                            int x = itemContainerState.getBlockX();
+                                            int y = itemContainerState.getBlockY();
+                                            int z = itemContainerState.getBlockZ();
 
-                                        int x = itemContainerState.getBlockX();
-                                        int y = itemContainerState.getBlockY();
-                                        int z = itemContainerState.getBlockZ();
+                                            LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore()
+                                                    .getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
-                                        LootChestTemplate lootChestTemplate = itemContainerState.getReference().getStore()
-                                                .getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
+                                            if (lootChestTemplate != null && lootChestTemplate.hasTemplate(x, y, z)) {
+                                                if (playerLoot.isFirstTime(x, y, z, world.getName())) {
+                                                    double particle_x = itemContainerState.getBlockX() + 0.5;
+                                                    double particle_y = itemContainerState.getBlockY() + 1.5;
+                                                    double particle_z = itemContainerState.getBlockZ() + 0.5;
 
-                                        if (lootChestTemplate != null && lootChestTemplate.hasTemplate(x, y, z)) {
-                                            if (playerLoot.isFirstTime(x, y, z, world.getName())) {
-                                                double particle_x = itemContainerState.getBlockX() + 0.5;
-                                                double particle_y = itemContainerState.getBlockY() + 1.5;
-                                                double particle_z = itemContainerState.getBlockZ() + 0.5;
-
-                                                ParticleUtil.spawnParticleEffect("Chest_Sparks", new Vector3d(particle_x, particle_y, particle_z), Collections.singletonList(player.getReference()), commandBuffer);
+                                                    ParticleUtil.spawnParticleEffect("Chest_Sparks", new Vector3d(particle_x, particle_y, particle_z), Collections.singletonList(player.getReference()), commandBuffer);
+                                                }
                                             }
                                         }
                                     }
