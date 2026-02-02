@@ -26,18 +26,23 @@ public class LootChestConfig implements Resource<ChunkStore> {
             .addField(new KeyedCodec<>("IsParticlesAppear", Codec.BOOLEAN)
                     ,(data, value) -> data.isParticlesAppear = value,
                     data -> data.isParticlesAppear)
+            .addField(new KeyedCodec<>("ParticlesColor", Codec.STRING)
+                    ,(data, value) -> data.particlesColor = value,
+                    data -> data.particlesColor)
             .build();
 
     private boolean canPlayerBreakLootChests;
     private boolean isLootRandom;
     private boolean isMessageAppear;
     private boolean isParticlesAppear;
+    private String particlesColor;
 
     public LootChestConfig(){
         this.canPlayerBreakLootChests = false;
         this.isLootRandom = true;
         this.isMessageAppear = true;
         this.isParticlesAppear = true;
+        this.particlesColor = "#ffffff00";
     }
 
     public LootChestConfig(LootChestConfig other){
@@ -45,6 +50,7 @@ public class LootChestConfig implements Resource<ChunkStore> {
         this.isLootRandom = other.isLootRandom;
         this.isMessageAppear = other.isMessageAppear;
         this.isParticlesAppear = other.isParticlesAppear;
+        this.particlesColor = other.particlesColor;
     }
 
     @Nullable
@@ -80,4 +86,8 @@ public class LootChestConfig implements Resource<ChunkStore> {
     public boolean isParticlesAppear(){ return isParticlesAppear; }
 
     public void setParticlesAppear(boolean new_value){ isParticlesAppear = new_value; }
+
+    public String getParticlesColor(){ return particlesColor; }
+
+    public void setParticlesColor(String new_value) { particlesColor = new_value; }
 }

@@ -5,8 +5,8 @@ import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.spatial.SpatialResource;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.protocol.Color;
 import com.hypixel.hytale.protocol.SoundCategory;
-import com.hypixel.hytale.protocol.WorldParticle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.block.BlockModule;
@@ -28,6 +28,7 @@ import org.mimstar.plugin.resources.LootChestConfig;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -149,7 +150,17 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                                     double particle_y = itemContainerState.getBlockY() + 1.5;
                                                     double particle_z = itemContainerState.getBlockZ() + 0.5;
 
-                                                    ParticleUtil.spawnParticleEffect("Chest_Sparks", new Vector3d(particle_x, particle_y, particle_z), Collections.singletonList(player.getReference()), commandBuffer);
+                                                    String color = lootChestConfig.getParticlesColor();
+
+                                                    if (color.startsWith("#")) {
+                                                        color = color.substring(1);
+                                                    }
+
+                                                    byte r = (byte) Integer.parseInt(color.substring(0, 2), 16);
+                                                    byte g = (byte) Integer.parseInt(color.substring(2, 4), 16);
+                                                    byte b = (byte) Integer.parseInt(color.substring(4, 6), 16);
+
+                                                    ParticleUtil.spawnParticleEffect("Chest_Sparks", new Vector3d(particle_x, particle_y, particle_z), 0, 0, 0, 1, new Color(r,g,b), Collections.singletonList(player.getReference()), commandBuffer);
                                                 }
                                             }
                                         }

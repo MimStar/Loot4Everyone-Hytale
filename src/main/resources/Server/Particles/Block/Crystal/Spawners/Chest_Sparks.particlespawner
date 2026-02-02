@@ -120,8 +120,7 @@
       "FrameIndex": {
         "Min": 0,
         "Max": 0
-      },
-      "Color": "#ffffff"
+      }
     }
   }
 }
