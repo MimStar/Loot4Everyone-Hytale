@@ -12,6 +12,7 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.ParticleUtil;
+import com.hypixel.hytale.server.core.universe.world.PlayerUtil;
 import com.hypixel.hytale.server.core.universe.world.SoundUtil;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockStateModule;
 import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
@@ -33,24 +34,26 @@ import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
-    private int tickTimer = 0;
 
     @Override
     public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
                      @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
 
-        tickTimer++;
-        if (tickTimer < 20) return;
-        tickTimer = 0;
-
         commandBuffer.run(deferredStore -> {
             try {
-
                 Player player = archetypeChunk.getComponent(index, Player.getComponentType());
                 PlayerLoot playerLoot = archetypeChunk.getComponent(index, Loot4Everyone.get().getPlayerLootcomponentType());
                 PlayerRef playerRef = archetypeChunk.getComponent(index, PlayerRef.getComponentType());
 
                 if (player == null || playerLoot == null || playerRef == null) return;
+
+                playerLoot.incrementTimer();
+
+                if (playerLoot.getTimer() < 20) {
+                    return;
+                }
+
+                playerLoot.resetTimer();
 
                 Vector3d playerPos = player.getTransformComponent().getPosition();
 

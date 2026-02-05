@@ -32,6 +32,8 @@ public class PlayerLoot implements Component<EntityStore> {
     private static final String KEY_MD = "md";
     private static final String KEY_META = "meta";
 
+    private transient int tickTimer = 0;
+
     public static class ChestData {
         public List<ItemStack> items = new ArrayList<>();
         public boolean discovered = false;
@@ -252,6 +254,18 @@ public class PlayerLoot implements Component<EntityStore> {
             v.items = new ArrayList<>(items);
             return v;
         });
+    }
+
+    public void incrementTimer() {
+        this.tickTimer++;
+    }
+
+    public int getTimer() {
+        return this.tickTimer;
+    }
+
+    public void resetTimer() {
+        this.tickTimer = 0;
     }
 
     public static class ItemStackListCodec implements Codec<List<ItemStack>> {
