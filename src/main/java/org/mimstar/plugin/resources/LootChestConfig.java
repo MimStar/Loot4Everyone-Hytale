@@ -29,6 +29,12 @@ public class LootChestConfig implements Resource<ChunkStore> {
             .addField(new KeyedCodec<>("ParticlesColor", Codec.STRING)
                     ,(data, value) -> data.particlesColor = value,
                     data -> data.particlesColor)
+            .addField(new KeyedCodec<>("NextLootResetInterval", Codec.INTEGER)
+                    ,(data, value ) -> data.nextLootResetInterval = value,
+                    data -> data.nextLootResetInterval)
+            .addField(new KeyedCodec<>("NextLootReset", Codec.INTEGER)
+                    ,(data, value ) -> data.nextLootReset = value,
+                    data -> data.nextLootReset)
             .build();
 
     private boolean canPlayerBreakLootChests;
@@ -36,6 +42,8 @@ public class LootChestConfig implements Resource<ChunkStore> {
     private boolean isMessageAppear;
     private boolean isParticlesAppear;
     private String particlesColor;
+    private int nextLootResetInterval;
+    private int nextLootReset;
 
     public LootChestConfig(){
         this.canPlayerBreakLootChests = false;
@@ -43,6 +51,8 @@ public class LootChestConfig implements Resource<ChunkStore> {
         this.isMessageAppear = true;
         this.isParticlesAppear = true;
         this.particlesColor = "#ffffff00";
+        this.nextLootResetInterval = 0;
+        this.nextLootReset = -1;
     }
 
     public LootChestConfig(LootChestConfig other){
@@ -51,6 +61,8 @@ public class LootChestConfig implements Resource<ChunkStore> {
         this.isMessageAppear = other.isMessageAppear;
         this.isParticlesAppear = other.isParticlesAppear;
         this.particlesColor = other.particlesColor;
+        this.nextLootResetInterval = other.nextLootResetInterval;
+        this.nextLootReset = other.nextLootReset;
     }
 
     @Nullable
@@ -90,4 +102,20 @@ public class LootChestConfig implements Resource<ChunkStore> {
     public String getParticlesColor(){ return particlesColor; }
 
     public void setParticlesColor(String new_value) { particlesColor = new_value; }
+
+    public int getNextLootResetInterval() {
+        return nextLootResetInterval;
+    }
+
+    public void setNextLootResetInterval(int new_value) {
+        this.nextLootResetInterval = new_value;
+    }
+
+    public int getNextLootReset() {
+        return nextLootReset;
+    }
+
+    public void setNextLootReset(int new_value) {
+        this.nextLootReset = new_value;
+    }
 }

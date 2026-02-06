@@ -91,6 +91,7 @@ public class Loot4Everyone extends JavaPlugin {
 
         this.getCommandRegistry().registerCommand(new SetBreakRuleCommand());
         this.getCommandRegistry().registerCommand(new ResetLootChestCommand());
+        this.getCommandRegistry().registerCommand(new SetAutoResetLootChestCommand());
         this.getCommandRegistry().registerCommand(new SetRandomRuleCommand());
         this.getCommandRegistry().registerCommand(new GenerateLootChestCommand());
         this.getCommandRegistry().registerCommand(new DeleteLootChestCommand());

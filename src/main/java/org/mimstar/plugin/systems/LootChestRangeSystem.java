@@ -10,6 +10,7 @@ import com.hypixel.hytale.protocol.SoundCategory;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.block.BlockModule;
+import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.ParticleUtil;
 import com.hypixel.hytale.server.core.universe.world.PlayerUtil;
@@ -30,6 +31,8 @@ import org.mimstar.plugin.resources.LootChestTemplate;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -55,11 +58,28 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                 playerLoot.resetTimer();
 
+
                 Vector3d playerPos = player.getTransformComponent().getPosition();
 
                 var world = player.getWorld();
                 var chunkStore = world.getChunkStore();
                 if (chunkStore == null) return;
+
+                LootChestConfig lootChestConfig = chunkStore.getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
+
+                LocalDate today = LocalDate.now();
+
+                int currentEpochDay = (int) today.toEpochDay();
+
+                int nextLootReset = lootChestConfig.getNextLootReset();
+
+                if (nextLootReset != -1 && currentEpochDay >= nextLootReset) {
+                    int newResetDate = currentEpochDay + lootChestConfig.getNextLootResetInterval();
+
+                    lootChestConfig.setNextLootReset(newResetDate);
+
+                    LootResetManager.runGlobalReset(world.getEntityStore().getStore());
+                }
 
                 var spatialResourceType = BlockStateModule.get().getItemContainerSpatialResourceType();
                 var spatial = chunkStore.getStore().getResource(spatialResourceType);
@@ -67,8 +87,6 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                 ObjectList<Ref<ChunkStore>> objectList = SpatialResource.getThreadLocalReferenceList();
                 spatial.getSpatialStructure().collect(playerPos, 5.0, objectList);
-
-                LootChestConfig lootChestConfig = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
                 if (!objectList.isEmpty()) {
                     Ref<ChunkStore> ref = objectList.get(0);
@@ -89,6 +107,7 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                     int z = itemContainerState.getBlockZ();
 
                                     if (lootChestTemplate != null && lootChestTemplate.hasTemplate(x, y, z)) {
+
                                         if (!playerLoot.isDiscovered(x, y, z, world.getName())) {
                                             String dropListName = lootChestTemplate.getDropList(x, y, z);
 
@@ -148,6 +167,7 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                                     .getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
                                             if (lootChestTemplate != null && lootChestTemplate.hasTemplate(x, y, z)) {
+
                                                 if (playerLoot.isFirstTime(x, y, z, world.getName())) {
                                                     double particle_x = itemContainerState.getBlockX() + 0.5;
                                                     double particle_y = itemContainerState.getBlockY() + 1.5;

@@ -21,6 +21,8 @@ import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.resources.LootChestConfig;
 
 import javax.annotation.Nonnull;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +57,9 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
         uiCommandBuilder.set("#IsParticlesAppearDropdown.Value",String.valueOf(lootChestConfig.isParticlesAppear()));
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged,"#IsParticlesAppearDropdown", EventData.of("Config","IsParticlesAppear").append("@DropdownValue","#IsParticlesAppearDropdown.Value"), false);
 
+        uiCommandBuilder.set("#NextLootResetIntervalNumberField.Value",lootChestConfig.getNextLootResetInterval());
+        uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged, "#NextLootResetIntervalNumberField",new EventData().append("@Days","#NextLootResetIntervalNumberField.Value"),false);
+
         uiCommandBuilder.set("#ParticlesColorPicker.Value",lootChestConfig.getParticlesColor());
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged,"#ParticlesColorPicker",new EventData().append("@Color","#ParticlesColorPicker.Value"),false);
     }
@@ -83,6 +88,20 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
             }
         }
 
+        if (data.days != lootChestConfig.getNextLootResetInterval()){
+
+            if (data.days > 0) {
+                int currentEpochDay = (int) LocalDate.now().toEpochDay();
+
+                lootChestConfig.setNextLootResetInterval(data.days);
+                lootChestConfig.setNextLootReset(currentEpochDay + data.days);
+            }
+            else{
+                lootChestConfig.setNextLootResetInterval(0);
+                lootChestConfig.setNextLootReset(-1);
+            }
+        }
+
         if (data.color != null){
             lootChestConfig.setParticlesColor(data.color);
         }
@@ -92,15 +111,18 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
         static final String KEY_CONFIG = "Config";
         static final String KEY_DROPDOWN_VALUE_QUERY = "@DropdownValue";
         static final String KEY_COLOR = "@Color";
+        static final String KEY_DAYS = "@Days";
 
         public static final BuilderCodec<LootConfigData> CODEC = BuilderCodec.<LootConfigData>builder(LootConfigData.class,LootConfigData::new)
                 .addField(new KeyedCodec<>(KEY_CONFIG, Codec.STRING), (lootConfigData, s) -> lootConfigData.config = s, lootConfigData -> lootConfigData.config)
                 .addField(new KeyedCodec<>(KEY_DROPDOWN_VALUE_QUERY, Codec.STRING), (lootConfigData, s) -> lootConfigData.dropdownValue = s, lootConfigData -> lootConfigData.dropdownValue)
                 .addField(new KeyedCodec<>(KEY_COLOR, Codec.STRING), (lootConfigData, s) -> lootConfigData.color = s, lootConfigData -> lootConfigData.color)
+                .addField(new KeyedCodec<>(KEY_DAYS, Codec.INTEGER), (lootConfigData, s) -> lootConfigData.days = s, lootConfigData -> lootConfigData.days)
                 .build();
 
         private String config;
         private String dropdownValue;
         private String color;
+        private int days;
     }
 }

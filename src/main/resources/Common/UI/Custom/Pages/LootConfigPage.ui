@@ -1,7 +1,7 @@
 $C = "../Common.ui";
 
 $C.@DecoratedContainer {
-  Anchor: (Width: 600, Height: 500);
+  Anchor: (Width: 600, Height: 550);
 
   #Title {
     Group {
@@ -104,6 +104,26 @@ $C.@DecoratedContainer {
             $C.@DropdownBox #IsParticlesAppearDropdown {
               Anchor: (Width: 262, Height: 20);
               Style: @DefaultDropdownBoxStyle;
+            }
+          }
+
+          Group #NextLootResetInterval {
+            LayoutMode: Left;
+            Padding: (Top: 8, Bottom: 8, Left: 8, Right: 8);
+            Label #NextLootResetIntervalLabel {
+              Text: "NextLootResetInterval";
+              Style: (
+                FontSize: 16,
+                RenderBold: true,
+                TextColor: #ffffff
+              );
+            }
+            Label {
+              FlexWeight: 1;
+            }
+            $C.@NumberField #NextLootResetIntervalNumberField {
+              Anchor: (Width: 262, Height: 20);
+              Format: (MaxDecimalPlaces: 3, Step: 1);
             }
           }
 
