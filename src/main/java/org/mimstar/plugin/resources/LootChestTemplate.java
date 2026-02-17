@@ -83,7 +83,6 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                 List<ItemStack> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
                 return new ChestData(items, DEFAULT_DROPLIST);
             } else {
-                // Manual Streaming Parse (Fastest & Memory Efficient)
                 List<ItemStack> items = new ArrayList<>();
                 String dropList = DEFAULT_DROPLIST;
 
@@ -94,7 +93,7 @@ public class LootChestTemplate implements Resource<ChunkStore> {
 
                 while (true) {
                     reader.consumeWhiteSpace();
-                    String key = reader.readString(); // Consumes key
+                    String key = reader.readString();
                     reader.consumeWhiteSpace();
                     reader.expect(':');
                     reader.consumeWhiteSpace();
@@ -270,7 +269,6 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                 if (value.isDocument()) {
                     try {
                         BsonDocument doc = value.asDocument();
-                        // Intern ID here as well
                         String itemId = doc.getString(KEY_ID).getValue().intern();
                         int quantity = doc.getInt32(KEY_Q).getValue();
                         double durability = doc.getDouble(KEY_D).getValue();
