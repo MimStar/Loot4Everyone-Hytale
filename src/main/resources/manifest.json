@@ -15,6 +15,9 @@
     "OptionalDependencies": {
         
     },
+    "UpdateChecker": {
+        "CurseForge": "1434840"
+    },
     "DisabledByDefault": false,
     "Main": "org.mimstar.plugin.Loot4Everyone",
     "IncludesAssetPack": true
