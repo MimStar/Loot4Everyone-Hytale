@@ -60,6 +60,15 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
         uiCommandBuilder.set("#NextLootResetIntervalNumberField.Value",lootChestConfig.getNextLootResetInterval());
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged, "#NextLootResetIntervalNumberField",new EventData().append("@Days","#NextLootResetIntervalNumberField.Value"),false);
 
+        uiCommandBuilder.set("#NextLootResetIntervalNumberField.Value",lootChestConfig.getNextLootResetInterval());
+        uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged, "#NextLootResetIntervalNumberField",new EventData().append("@Hours","#NextLootResetIntervalNumberField.Value"),false);
+
+        uiCommandBuilder.set("#NextLootResetIntervalNumberField.Value",lootChestConfig.getNextLootResetInterval());
+        uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged, "#NextLootResetIntervalNumberField",new EventData().append("@Minutes","#NextLootResetIntervalNumberField.Value"),false);
+
+        uiCommandBuilder.set("#NextLootResetIntervalNumberField.Value",lootChestConfig.getNextLootResetInterval());
+        uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged, "#NextLootResetIntervalNumberField",new EventData().append("@Seconds","#NextLootResetIntervalNumberField.Value"),false);
+
         uiCommandBuilder.set("#ParticlesColorPicker.Value",lootChestConfig.getParticlesColor());
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged,"#ParticlesColorPicker",new EventData().append("@Color","#ParticlesColorPicker.Value"),false);
     }
@@ -112,17 +121,26 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
         static final String KEY_DROPDOWN_VALUE_QUERY = "@DropdownValue";
         static final String KEY_COLOR = "@Color";
         static final String KEY_DAYS = "@Days";
+        static final String KEY_HOURS = "@Hours";
+        static final String KEY_MINUTES = "@Minutes";
+        static final String KEY_SECONDS = "@Seconds";
 
         public static final BuilderCodec<LootConfigData> CODEC = BuilderCodec.<LootConfigData>builder(LootConfigData.class,LootConfigData::new)
                 .addField(new KeyedCodec<>(KEY_CONFIG, Codec.STRING), (lootConfigData, s) -> lootConfigData.config = s, lootConfigData -> lootConfigData.config)
                 .addField(new KeyedCodec<>(KEY_DROPDOWN_VALUE_QUERY, Codec.STRING), (lootConfigData, s) -> lootConfigData.dropdownValue = s, lootConfigData -> lootConfigData.dropdownValue)
                 .addField(new KeyedCodec<>(KEY_COLOR, Codec.STRING), (lootConfigData, s) -> lootConfigData.color = s, lootConfigData -> lootConfigData.color)
                 .addField(new KeyedCodec<>(KEY_DAYS, Codec.INTEGER), (lootConfigData, s) -> lootConfigData.days = s, lootConfigData -> lootConfigData.days)
+                .addField(new KeyedCodec<>(KEY_HOURS, Codec.INTEGER), (lootConfigData, s) -> lootConfigData.hours = s, lootConfigData -> lootConfigData.hours)
+                .addField(new KeyedCodec<>(KEY_MINUTES, Codec.INTEGER), (lootConfigData, s) -> lootConfigData.minutes = s, lootConfigData -> lootConfigData.minutes)
+                .addField(new KeyedCodec<>(KEY_SECONDS, Codec.INTEGER), (lootConfigData, s) -> lootConfigData.seconds = s, lootConfigData -> lootConfigData.seconds)
                 .build();
 
         private String config;
         private String dropdownValue;
         private String color;
         private int days;
+        private int hours;
+        private int minutes;
+        private int seconds;
     }
 }
