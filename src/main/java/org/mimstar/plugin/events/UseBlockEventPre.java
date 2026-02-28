@@ -55,9 +55,8 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                     return;
                 }
 
-                // Check if player already has a container being monitored
                 OpenedContainerComponent existing = store.getComponent(playerRef, Loot4Everyone.get().getContainerComponentType());
-                if (existing != null) {
+                if (existing != null){
                     useBlockEventPre.setCancelled(true);
                     return;
                 }

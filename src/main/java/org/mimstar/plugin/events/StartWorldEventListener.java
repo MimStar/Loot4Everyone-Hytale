@@ -15,17 +15,21 @@ public class StartWorldEventListener {
             return;
         }
 
+        if (!defaultWorld.isAlive()){
+            return;
+        }
+
         if (!defaultWorld.getName().equals(event.getWorld().getName())) {
-            LootChestConfig default_lootChestConfig = defaultWorld.getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
+            LootChestConfig defaultLootChestConfig = defaultWorld.getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
             LootChestConfig lootChestConfig = event.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
             lootChestConfig.setNextLootResetInterval(0);
             lootChestConfig.setNextLootReset(-1);
-            lootChestConfig.setLootRandom(default_lootChestConfig.isLootChestRandom());
-            lootChestConfig.setCanPlayerBreakLootChests(default_lootChestConfig.isCanPlayerBreakLootChests());
-            lootChestConfig.setParticlesAppear(default_lootChestConfig.isParticlesAppear());
-            lootChestConfig.setParticlesColor(default_lootChestConfig.getParticlesColor());
-            lootChestConfig.setMessageAppear(default_lootChestConfig.isMessageAppear());
+            lootChestConfig.setLootRandom(defaultLootChestConfig.isLootChestRandom());
+            lootChestConfig.setCanPlayerBreakLootChests(defaultLootChestConfig.isCanPlayerBreakLootChests());
+            lootChestConfig.setParticlesAppear(defaultLootChestConfig.isParticlesAppear());
+            lootChestConfig.setParticlesColor(defaultLootChestConfig.getParticlesColor());
+            lootChestConfig.setMessageAppear(defaultLootChestConfig.isMessageAppear());
         }
     }
 }
