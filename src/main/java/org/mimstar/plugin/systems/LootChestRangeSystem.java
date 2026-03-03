@@ -31,8 +31,10 @@ import org.mimstar.plugin.resources.LootChestTemplate;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -67,16 +69,21 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                 LootChestConfig lootChestConfig = chunkStore.getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
-                LocalDate today = LocalDate.now();
+                long nowSeconds = Instant.now().getEpochSecond();
 
-                int currentEpochDay = (int) today.toEpochDay();
+                long nextLootReset = lootChestConfig.getNextLootReset();
 
-                int nextLootReset = lootChestConfig.getNextLootReset();
+                if (nextLootReset != -1 && nowSeconds >= nextLootReset) {
 
-                if (nextLootReset != -1 && currentEpochDay >= nextLootReset) {
-                    int newResetDate = currentEpochDay + lootChestConfig.getNextLootResetInterval();
+                    LocalDateTime nextResetDateTime = LocalDateTime.now()
+                            .plusDays(lootChestConfig.getNextLootResetDaysInterval())
+                            .plusHours(lootChestConfig.getNextLootResetHoursInterval())
+                            .plusMinutes(lootChestConfig.getNextLootResetMinutesInterval())
+                            .plusSeconds(lootChestConfig.getNextLootResetSecondsInterval());
 
-                    lootChestConfig.setNextLootReset(newResetDate);
+                    long newResetTimestamp = nextResetDateTime.atZone(ZoneId.systemDefault()).toEpochSecond();
+
+                    lootChestConfig.setNextLootReset(newResetTimestamp);
 
                     LootResetManager.runGlobalReset(world.getEntityStore().getStore());
                 }

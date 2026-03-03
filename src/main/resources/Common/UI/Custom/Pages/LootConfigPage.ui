@@ -121,8 +121,20 @@ $C.@DecoratedContainer {
             Label {
               FlexWeight: 1;
             }
-            $C.@NumberField #NextLootResetIntervalNumberField {
-              Anchor: (Width: 262, Height: 20);
+            $C.@NumberField #NextLootResetIntervalDaysNumberField {
+              Anchor: (Width: 65, Height: 20);
+              Format: (MaxDecimalPlaces: 3, Step: 1);
+            }
+            $C.@NumberField #NextLootResetIntervalHoursNumberField {
+              Anchor: (Width: 65, Height: 20);
+              Format: (MaxDecimalPlaces: 3, Step: 1);
+            }
+            $C.@NumberField #NextLootResetIntervalMinutesNumberField {
+              Anchor: (Width: 65, Height: 20);
+              Format: (MaxDecimalPlaces: 3, Step: 1);
+            }
+            $C.@NumberField #NextLootResetIntervalSecondsNumberField {
+              Anchor: (Width: 65, Height: 20);
               Format: (MaxDecimalPlaces: 3, Step: 1);
             }
           }

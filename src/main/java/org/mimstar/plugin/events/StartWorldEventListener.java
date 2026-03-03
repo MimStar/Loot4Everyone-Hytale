@@ -23,8 +23,11 @@ public class StartWorldEventListener {
             LootChestConfig defaultLootChestConfig = defaultWorld.getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
             LootChestConfig lootChestConfig = event.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
-            lootChestConfig.setNextLootResetInterval(0);
-            lootChestConfig.setNextLootReset(-1);
+            lootChestConfig.setNextLootResetDaysInterval(defaultLootChestConfig.getNextLootResetDaysInterval());
+            lootChestConfig.setNextLootResetHoursInterval(defaultLootChestConfig.getNextLootResetHoursInterval());
+            lootChestConfig.setNextLootResetMinutesInterval(defaultLootChestConfig.getNextLootResetMinutesInterval());
+            lootChestConfig.setNextLootResetSecondsInterval(defaultLootChestConfig.getNextLootResetSecondsInterval());
+            lootChestConfig.setNextLootReset(defaultLootChestConfig.getNextLootReset());
             lootChestConfig.setLootRandom(defaultLootChestConfig.isLootChestRandom());
             lootChestConfig.setCanPlayerBreakLootChests(defaultLootChestConfig.isCanPlayerBreakLootChests());
             lootChestConfig.setParticlesAppear(defaultLootChestConfig.isParticlesAppear());

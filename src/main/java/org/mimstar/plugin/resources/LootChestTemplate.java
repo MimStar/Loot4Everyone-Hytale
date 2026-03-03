@@ -202,24 +202,35 @@ public class LootChestTemplate implements Resource<ChunkStore> {
         @Override
         public List<ItemStack> decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
             List<ItemStack> list = new ArrayList<>();
+            reader.consumeWhiteSpace();
             reader.expect('[');
             reader.consumeWhiteSpace();
+
             if (reader.tryConsume(']')) return list;
 
             while (true) {
                 reader.consumeWhiteSpace();
                 int c = reader.peek();
 
-                if (c == 'n' || c == 'N') {
-                    reader.readNullValue();
+                if (c == 'n') {
+                    reader.skip(4);
                     list.add(null);
-                } else {
+                } else if (c == '{') {
                     list.add(decodeItemStackJson(reader));
+                } else if (c == '"') {
+                    reader.skipValue();
+                } else {
+                    reader.skipValue();
                 }
 
                 reader.consumeWhiteSpace();
                 if (reader.tryConsume(']')) break;
-                reader.expect(',');
+
+                if (!reader.tryConsume(',')) {
+                    if (reader.peek() != ']') {
+                        throw new IOException("Expected ',' or ']' but found: " + (char)reader.peek());
+                    }
+                }
             }
             return list;
         }
@@ -247,9 +258,9 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                     case KEY_ID -> {
                         id = reader.readString().intern();
                     }
-                    case KEY_Q -> q = reader.readIntValue();
-                    case KEY_D -> d = reader.readDoubleValue();
-                    case KEY_MD -> md = reader.readDoubleValue();
+                    case KEY_Q -> q = (int) readNumberSafe(reader, 1.0);
+                    case KEY_D -> d = readNumberSafe(reader, 0.0);
+                    case KEY_MD -> md = readNumberSafe(reader, 0.0);
                     case KEY_META -> meta = RawJsonReader.readBsonDocument(reader);
                     default -> reader.skipValue();
                 }
@@ -259,6 +270,21 @@ public class LootChestTemplate implements Resource<ChunkStore> {
                 reader.expect(',');
             }
             return new ItemStack(id, q, d, md, meta);
+        }
+
+        private double readNumberSafe(RawJsonReader reader, double defaultValue) throws IOException {
+            reader.consumeWhiteSpace();
+            int c = reader.peek();
+
+            if (Character.isDigit(c) || c == '-' || c == '+' || c == '.') {
+                try {
+                    return reader.readDoubleValue();
+                } catch (Exception e) {
+                    return defaultValue;
+                }
+            }
+
+            return defaultValue;
         }
 
         public static List<ItemStack> deserializeBsonArray(BsonArray array) {
