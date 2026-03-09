@@ -29,39 +29,40 @@ public class ContainerMonitoringSystem extends EntityTickingSystem<EntityStore> 
     public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
                      @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
 
-        Ref<EntityStore> playerRef = archetypeChunk.getReferenceTo(index);
-        OpenedContainerComponent monitor = archetypeChunk.getComponent(index, containerComponentType);
-        Player player = archetypeChunk.getComponent(index, Player.getComponentType());
+        commandBuffer.run(defferedStore -> {
+            Ref<EntityStore> playerRef = archetypeChunk.getReferenceTo(index);
+            OpenedContainerComponent monitor = archetypeChunk.getComponent(index, containerComponentType);
+            Player player = archetypeChunk.getComponent(index, Player.getComponentType());
+            World world = player.getWorld();
+            BlockState blockState = world.getState(monitor.getX(), monitor.getY(), monitor.getZ(), true);
 
-        World world = player.getWorld();
-        BlockState blockState = world.getState(monitor.getX(), monitor.getY(), monitor.getZ(), true);
+            boolean stillOpen = false;
 
-        boolean stillOpen = false;
-
-        if (blockState instanceof ItemContainerState containerState) {
-            if (!containerState.getWindows().isEmpty()) {
-                stillOpen = true;
-            }
-        }
-
-        if (!stillOpen) {
-            PlayerLoot playerLoot = store.getComponent(playerRef, Loot4Everyone.get().getPlayerLootcomponentType());
-
-            if (playerLoot != null && playerLoot.hasDeprecatedData(monitor.getX(), monitor.getY(), monitor.getZ())){
-                playerLoot.replaceDeprecatedData(monitor.getX(), monitor.getY(), monitor.getZ(), player.getWorld().getName());
-            }
-
-            if (blockState instanceof ItemContainerState itemContainerState && playerLoot != null) {
-                List<ItemStack> items = new ArrayList<>();
-                for (int i = 0; i < itemContainerState.getItemContainer().getCapacity(); i++) {
-                    items.add(itemContainerState.getItemContainer().getItemStack((short) i));
+            if (blockState instanceof ItemContainerState containerState) {
+                if (!containerState.getWindows().isEmpty()) {
+                    stillOpen = true;
                 }
-                playerLoot.setInventory(monitor.getX(), monitor.getY(), monitor.getZ(), player.getWorld().getName(), items);
-                commandBuffer.replaceComponent(playerRef,Loot4Everyone.get().getPlayerLootcomponentType(), playerLoot);
-                itemContainerState.getItemContainer().clear();
             }
-            commandBuffer.removeComponent(playerRef, containerComponentType);
-        }
+
+            if (!stillOpen) {
+                PlayerLoot playerLoot = defferedStore.getComponent(playerRef, Loot4Everyone.get().getPlayerLootcomponentType());
+
+                if (playerLoot != null && playerLoot.hasDeprecatedData(monitor.getX(), monitor.getY(), monitor.getZ())) {
+                    playerLoot.replaceDeprecatedData(monitor.getX(), monitor.getY(), monitor.getZ(), player.getWorld().getName());
+                }
+
+                if (blockState instanceof ItemContainerState itemContainerState && playerLoot != null) {
+                    List<ItemStack> items = new ArrayList<>();
+                    for (int i = 0; i < itemContainerState.getItemContainer().getCapacity(); i++) {
+                        items.add(itemContainerState.getItemContainer().getItemStack((short) i));
+                    }
+                    playerLoot.setInventory(monitor.getX(), monitor.getY(), monitor.getZ(), player.getWorld().getName(), items);
+                    commandBuffer.replaceComponent(playerRef, Loot4Everyone.get().getPlayerLootcomponentType(), playerLoot);
+                    itemContainerState.getItemContainer().clear();
+                }
+                commandBuffer.removeComponent(playerRef, containerComponentType);
+            }
+        });
     }
 
     @Nonnull
