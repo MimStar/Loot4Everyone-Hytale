@@ -29,6 +29,9 @@ public class LootChestConfig implements Resource<ChunkStore> {
             .addField(new KeyedCodec<>("ParticlesColor", Codec.STRING)
                     ,(data, value) -> data.particlesColor = value,
                     data -> data.particlesColor)
+            .addField(new KeyedCodec<>("LootResetMode", Codec.INTEGER)
+                    ,(data, value ) -> data.lootResetMode = value,
+                    data -> data.lootResetMode)
             .addField(new KeyedCodec<>("NextLootResetDaysInterval", Codec.INTEGER)
                     ,(data, value ) -> data.nextLootResetDaysInterval = value,
                     data -> data.nextLootResetDaysInterval)
@@ -51,6 +54,7 @@ public class LootChestConfig implements Resource<ChunkStore> {
     private boolean isMessageAppear;
     private boolean isParticlesAppear;
     private String particlesColor;
+    private int lootResetMode;
     private int nextLootResetDaysInterval;
     private int nextLootResetHoursInterval;
     private int nextLootResetMinutesInterval;
@@ -63,6 +67,7 @@ public class LootChestConfig implements Resource<ChunkStore> {
         this.isMessageAppear = true;
         this.isParticlesAppear = true;
         this.particlesColor = "#ffffff00";
+        this.lootResetMode = 0;
         this.nextLootResetDaysInterval = 0;
         this.nextLootResetHoursInterval = 0;
         this.nextLootResetMinutesInterval = 0;
@@ -76,6 +81,7 @@ public class LootChestConfig implements Resource<ChunkStore> {
         this.isMessageAppear = other.isMessageAppear;
         this.isParticlesAppear = other.isParticlesAppear;
         this.particlesColor = other.particlesColor;
+        this.lootResetMode = other.lootResetMode;
         this.nextLootResetDaysInterval = other.nextLootResetDaysInterval;
         this.nextLootResetHoursInterval = other.nextLootResetHoursInterval;
         this.nextLootResetMinutesInterval = other.nextLootResetMinutesInterval;
@@ -120,6 +126,10 @@ public class LootChestConfig implements Resource<ChunkStore> {
     public String getParticlesColor(){ return particlesColor; }
 
     public void setParticlesColor(String new_value) { particlesColor = new_value; }
+
+    public int getLootResetMode() { return lootResetMode; }
+
+    public void setLootResetMode(int new_value) { this.lootResetMode = new_value; }
 
     public int getNextLootResetDaysInterval() {
         return nextLootResetDaysInterval;

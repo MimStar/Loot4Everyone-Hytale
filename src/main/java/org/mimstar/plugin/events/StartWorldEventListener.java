@@ -11,11 +11,7 @@ public class StartWorldEventListener {
     public static void onStartWorldEvent(StartWorldEvent event){
         World defaultWorld = Universe.get().getDefaultWorld();
 
-        if (defaultWorld == null){
-            return;
-        }
-
-        if (!defaultWorld.isAlive()){
+        if (defaultWorld == null || !defaultWorld.isAlive()) {
             return;
         }
 
@@ -23,6 +19,11 @@ public class StartWorldEventListener {
             LootChestConfig defaultLootChestConfig = defaultWorld.getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
             LootChestConfig lootChestConfig = event.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
+            if (defaultLootChestConfig == null || lootChestConfig == null) {
+                return;
+            }
+
+            lootChestConfig.setLootResetMode(defaultLootChestConfig.getLootResetMode());
             lootChestConfig.setNextLootResetDaysInterval(defaultLootChestConfig.getNextLootResetDaysInterval());
             lootChestConfig.setNextLootResetHoursInterval(defaultLootChestConfig.getNextLootResetHoursInterval());
             lootChestConfig.setNextLootResetMinutesInterval(defaultLootChestConfig.getNextLootResetMinutesInterval());

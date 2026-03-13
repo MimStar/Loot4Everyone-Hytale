@@ -8,8 +8,8 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.entity.entities.player.pages.BasicCustomUIPage;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
+import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.ui.DropdownEntryInfo;
 import com.hypixel.hytale.server.core.ui.LocalizableString;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
@@ -21,8 +21,9 @@ import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.resources.LootChestConfig;
 
 import javax.annotation.Nonnull;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,8 +39,13 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
         List<DropdownEntryInfo> entries = new ArrayList<>();
         Player player = store.getComponent(ref, Player.getComponentType());
         LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
-        entries.add(new DropdownEntryInfo(LocalizableString.fromString("true"),"true"));
-        entries.add(new DropdownEntryInfo(LocalizableString.fromString("false"),"false"));
+        entries.add(new DropdownEntryInfo(LocalizableString.fromString("True"),"true"));
+        entries.add(new DropdownEntryInfo(LocalizableString.fromString("False"),"false"));
+
+        List<DropdownEntryInfo> resetModeEntries = new ArrayList<>();
+        resetModeEntries.add(new DropdownEntryInfo(LocalizableString.fromString("False"), "0"));
+        resetModeEntries.add(new DropdownEntryInfo(LocalizableString.fromString("Game Time"), "1"));
+        resetModeEntries.add(new DropdownEntryInfo(LocalizableString.fromString("Real Time"), "2"));
 
         uiCommandBuilder.set("#CanPlayerBreakLootChestsDropdown.Entries",entries);
         uiCommandBuilder.set("#CanPlayerBreakLootChestsDropdown.Value",String.valueOf(lootChestConfig.isCanPlayerBreakLootChests()));
@@ -56,6 +62,10 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
         uiCommandBuilder.set("#IsParticlesAppearDropdown.Entries",entries);
         uiCommandBuilder.set("#IsParticlesAppearDropdown.Value",String.valueOf(lootChestConfig.isParticlesAppear()));
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged,"#IsParticlesAppearDropdown", EventData.of("Config","IsParticlesAppear").append("@DropdownValue","#IsParticlesAppearDropdown.Value"), false);
+
+        uiCommandBuilder.set("#LootResetDropdown.Entries",resetModeEntries);
+        uiCommandBuilder.set("#LootResetDropdown.Value",String.valueOf(lootChestConfig.getLootResetMode()));
+        uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged,"#LootResetDropdown", EventData.of("Config","LootResetMode").append("@DropdownValue","#LootResetDropdown.Value"), false);
 
         uiCommandBuilder.set("#NextLootResetIntervalDaysNumberField.Value",lootChestConfig.getNextLootResetDaysInterval());
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged, "#NextLootResetIntervalDaysNumberField",new EventData().append("@Days","#NextLootResetIntervalDaysNumberField.Value"),false);
@@ -80,12 +90,12 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
         LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
         if (data.config != null) {
-            boolean value = Boolean.parseBoolean(data.dropdownValue);
             switch (data.config) {
-                case "CanPlayerBreakLootChests" -> lootChestConfig.setCanPlayerBreakLootChests(value);
-                case "IsLootRandom" -> lootChestConfig.setLootRandom(value);
-                case "IsMessageAppear" -> lootChestConfig.setMessageAppear(value);
-                case "IsParticlesAppear" -> lootChestConfig.setParticlesAppear(value);
+                case "CanPlayerBreakLootChests" -> lootChestConfig.setCanPlayerBreakLootChests(Boolean.parseBoolean(data.dropdownValue));
+                case "IsLootRandom" -> lootChestConfig.setLootRandom(Boolean.parseBoolean(data.dropdownValue));
+                case "IsMessageAppear" -> lootChestConfig.setMessageAppear(Boolean.parseBoolean(data.dropdownValue));
+                case "IsParticlesAppear" -> lootChestConfig.setParticlesAppear(Boolean.parseBoolean(data.dropdownValue));
+                case "LootResetMode" -> lootChestConfig.setLootResetMode(Integer.parseInt(data.dropdownValue));
             }
         }
 
@@ -98,22 +108,29 @@ public class LootConfigPage extends InteractiveCustomUIPage<LootConfigPage.LootC
         if (data.minutes != null) lootChestConfig.setNextLootResetMinutesInterval(data.minutes);
         if (data.seconds != null) lootChestConfig.setNextLootResetSecondsInterval(data.seconds);
 
-        // Now calculate the total epoch based on the updated config values
         int d = lootChestConfig.getNextLootResetDaysInterval();
         int h = lootChestConfig.getNextLootResetHoursInterval();
         int m = lootChestConfig.getNextLootResetMinutesInterval();
         int s = lootChestConfig.getNextLootResetSecondsInterval();
 
-        if (d == 0 && h == 0 && m == 0 && s == 0) {
+        int mode = lootChestConfig.getLootResetMode();
+
+        if (mode == 0 || (d == 0 && h == 0 && m == 0 && s == 0)) {
             lootChestConfig.setNextLootReset(-1);
         } else {
-            LocalDateTime nextResetDateTime = LocalDateTime.now()
+            LocalDateTime baseTime;
+            if (mode == 1) {
+                WorldTimeResource worldTimeResource = store.getResource(WorldTimeResource.getResourceType());
+                baseTime = worldTimeResource.getGameDateTime();
+            } else {
+                baseTime = LocalDateTime.now();
+            }
+            LocalDateTime nextResetDateTime = baseTime
                     .plusDays(d)
                     .plusHours(h)
                     .plusMinutes(m)
                     .plusSeconds(s);
-
-            long nextResetEpoch = nextResetDateTime.atZone(java.time.ZoneId.systemDefault()).toEpochSecond();
+            long nextResetEpoch = nextResetDateTime.atZone(ZoneId.systemDefault()).toEpochSecond();
             lootChestConfig.setNextLootReset(nextResetEpoch);
         }
     }

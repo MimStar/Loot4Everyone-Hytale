@@ -60,7 +60,6 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                 playerLoot.resetTimer();
 
-
                 Vector3d playerPos = player.getTransformComponent().getPosition();
 
                 var world = player.getWorld();
@@ -69,23 +68,37 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                 LootChestConfig lootChestConfig = chunkStore.getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
-                long nowSeconds = Instant.now().getEpochSecond();
-
                 long nextLootReset = lootChestConfig.getNextLootReset();
+                int mode = lootChestConfig.getLootResetMode();
 
-                if (nextLootReset != -1 && nowSeconds >= nextLootReset) {
+                if (mode != 0 && nextLootReset != -1) {
 
-                    LocalDateTime nextResetDateTime = LocalDateTime.now()
-                            .plusDays(lootChestConfig.getNextLootResetDaysInterval())
-                            .plusHours(lootChestConfig.getNextLootResetHoursInterval())
-                            .plusMinutes(lootChestConfig.getNextLootResetMinutesInterval())
-                            .plusSeconds(lootChestConfig.getNextLootResetSecondsInterval());
+                    long currentTimestamp;
+                    LocalDateTime baseTime;
 
-                    long newResetTimestamp = nextResetDateTime.atZone(ZoneId.systemDefault()).toEpochSecond();
+                    if (mode == 1) {
+                        WorldTimeResource worldTimeResource = world.getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
+                        baseTime = worldTimeResource.getGameDateTime();
+                    } else {
+                        baseTime = LocalDateTime.now();
+                    }
+                    currentTimestamp = baseTime.atZone(ZoneId.systemDefault()).toEpochSecond();
 
-                    lootChestConfig.setNextLootReset(newResetTimestamp);
+                    if (currentTimestamp >= nextLootReset) {
 
-                    LootResetManager.runGlobalReset(world.getEntityStore().getStore());
+                        LocalDateTime nextResetDateTime = baseTime
+                                .plusDays(lootChestConfig.getNextLootResetDaysInterval())
+                                .plusHours(lootChestConfig.getNextLootResetHoursInterval())
+                                .plusMinutes(lootChestConfig.getNextLootResetMinutesInterval())
+                                .plusSeconds(lootChestConfig.getNextLootResetSecondsInterval());
+
+                        long newResetTimestamp = nextResetDateTime.atZone(ZoneId.systemDefault()).toEpochSecond();
+
+                        lootChestConfig.setNextLootReset(newResetTimestamp);
+                        LootResetManager.runGlobalReset(world.getEntityStore().getStore());
+
+                        Loot4Everyone.LOGGER.atInfo().log("Reset happened!");
+                    }
                 }
 
                 var spatialResourceType = BlockStateModule.get().getItemContainerSpatialResourceType();
