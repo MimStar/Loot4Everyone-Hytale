@@ -19,6 +19,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockState;
 import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.universe.world.worldgen.IWorldGen;
 import com.hypixel.hytale.server.core.util.TargetUtil;
 import com.hypixel.hytale.server.worldgen.chunk.ChunkGenerator;
 import com.hypixel.hytale.server.worldgen.chunk.ZoneBiomeResult;
@@ -113,15 +114,22 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
                 }
 
                 if (isEmpty){
-                    ChunkGenerator chunkGenerator = (ChunkGenerator) world.getChunkStore().getGenerator();
+                    IWorldGen iWorldGen = world.getChunkStore().getGenerator();
                     int seed = (int) world.getWorldConfig().getSeed();
-
-                    ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, targetBlock.getX(), targetBlock.getZ());
-                    String zoneName = result.getZoneResult().getZone().name(); // Ex: Zone1_Tier1
+                    String zoneName = "";
+                    if (iWorldGen instanceof ChunkGenerator chunkGenerator) {
+                        ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, targetBlock.getX(), targetBlock.getZ());
+                        zoneName = result.getZoneResult().getZone().name(); // Ex: Zone1_Tier1
+                    }
 
                     if (zoneName.contains("Tier5")){
                         int randomTier = ThreadLocalRandom.current().nextInt(1,5);
                         zoneName = zoneName.replace("Tier5","Tier" + randomTier);
+                    }
+                    else if (!zoneName.contains("Zone") || !zoneName.contains("Tier")){
+                        int randomZone = ThreadLocalRandom.current().nextInt(1,5);
+                        int randomTier = ThreadLocalRandom.current().nextInt(1,5);
+                        zoneName = "Zone" + randomZone + "_Tier" + randomTier;
                     }
 
                     String dropListName = zoneName.replace("_", "_Encounters_");

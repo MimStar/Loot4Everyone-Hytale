@@ -19,6 +19,7 @@ import com.hypixel.hytale.server.core.universe.world.meta.BlockStateModule;
 import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.universe.world.worldgen.IWorldGen;
 import com.hypixel.hytale.server.core.util.EventTitleUtil;
 import com.hypixel.hytale.server.core.util.TempAssetIdUtil;
 import com.hypixel.hytale.server.worldgen.chunk.ChunkGenerator;
@@ -132,15 +133,22 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                             String dropListName = lootChestTemplate.getDropList(x, y, z);
 
                                             if ("undefined".equals(dropListName)) {
-                                                ChunkGenerator chunkGenerator = (ChunkGenerator) world.getChunkStore().getGenerator();
+                                                IWorldGen iWorldGen = world.getChunkStore().getGenerator();
                                                 int seed = (int) world.getWorldConfig().getSeed();
-
-                                                ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, x, z); //Ex: Zone1_Tier1
-                                                String zoneName = result.getZoneResult().getZone().name();
+                                                String zoneName = "";
+                                                if (iWorldGen instanceof ChunkGenerator chunkGenerator) {
+                                                    ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, x, z);
+                                                    zoneName = result.getZoneResult().getZone().name(); // Ex: Zone1_Tier1
+                                                }
 
                                                 if (zoneName.contains("Tier5")){
                                                     int randomTier = ThreadLocalRandom.current().nextInt(1,5);
                                                     zoneName = zoneName.replace("Tier5","Tier" + randomTier);
+                                                }
+                                                else if (!zoneName.contains("Zone") || !zoneName.contains("Tier")){
+                                                    int randomZone = ThreadLocalRandom.current().nextInt(1,5);
+                                                    int randomTier = ThreadLocalRandom.current().nextInt(1,5);
+                                                    zoneName = "Zone" + randomZone + "_Tier" + randomTier;
                                                 }
 
                                                 dropListName = zoneName.replace("_", "_Encounters_");

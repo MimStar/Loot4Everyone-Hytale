@@ -11,7 +11,7 @@ public class StartWorldEventListener {
     public static void onStartWorldEvent(StartWorldEvent event){
         World defaultWorld = Universe.get().getDefaultWorld();
 
-        if (defaultWorld == null || !defaultWorld.isAlive()) {
+        if (defaultWorld == null || !defaultWorld.isAlive() || !defaultWorld.isStarted()) {
             return;
         }
 
