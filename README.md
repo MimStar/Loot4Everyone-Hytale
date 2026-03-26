@@ -1,55 +1,37 @@
-# Hytale Plugin Template
+# Loot4Everyone
 
-A ready-to-use starting point for creating Hytale server plugins with Java, _or Kotlin_. If you've
-been using the Asset Editor and want to start writing server-side logic — custom commands, event
-handling, gameplay systems — this is the simplest place to begin.
+> **⚠️ Warning: Early Access**    
+> The game Hytale is in early access, and so is this project! Features may be
+> incomplete, unstable, or change frequently. Please be patient and understanding as development
+> continues.
 
-## How to start?
+## Loot4Everyone revamps loot chests so every player can have his own loot and let you create, edit, delete, reset ANY loot chests!
 
-1. Copy the template by downloading it or using the "Use this template" button.
-2. [Configure or Install the Java SDK](https://hytalemodding.dev/en/docs/guides/plugin/setting-up-env)
-   to use the latest 25 from JetBrains or similar.
-3. Open the project in your favorite IDE, we
-   recommend [IntelliJ IDEA](https://www.jetbrains.com/idea/download).
-4. Optionally, run `./gradlew` if your IDE does not automtically synchronizes.
-5. Run the devserver with the Run Configuration created, or `./gradlew devServer`.
+### _⚠️ Warning ⚠️_
 
-> On Windows, use `.\gradlew.bat` instead of `./gradlew`, this script is here to run the
-> Gradle without you needing to install the tooling itself, only the Java is required.
+### _If you have loot chests that are already generated, you can regenerate them with **/generatelc** to add them in the system._
 
-With that you will be prompted in the output to authorize your server, and then you can start
-developing your plugin while the server is live reloading the code changes.
 
-From here,
-the [HytaleModding guides](https://hytalemodding.dev/en/docs/guides/plugin/build-and-test) cover
-more details!
 
-## Scaffoldit Plugin
+### Features
 
-While there are multiple plugins made for Hytale, the template currently uses a zero-boilerplate one
-where you only need the absolute minimum to start. However, you do have access to everything as
-normal if you know what you are doing.
+*   Know when you discover for the first time a loot chest! A message appear with a sound effect and you can have information about what's inside the loot chest!
+*   Loot chest griefing protection! Config it with **/setbreakrule <value>** (**true** or **false**)
+*   Random loot for every player! Config it with **/setrandomrule <value>** (**true** or **false**)
+*   Reset loot chests! Look at a loot chest and do **/resetlc** to reset this chest for all players or specify the player by adding the arg **\--player <name>** and/or the arg **\--all true** to reset all loot chests for the player provided with the arg or else for all players.
+*   Loot chest maker system! Create, edit, delete ANY loot chests!
 
-For in-depth configuration, you can visit the [ScaffoldIt Plugin Docs](https://scaffoldit.dev).
+### Loot chest maker
 
-## Troubleshooting
+*   To select a loot chest or an item container, just look at it!
+*   Use any item container to generate a loot chest! With just **/generatelc** you generate automatically a loot chest based on the zone! You can add the arg **\--droplist <droplist-id>** to specify ANY droplist that your server has access (yes this should work with modded droplists!). If you prefer to make a custom droplist add items inside of the item container and just do **/generatelc** to have your custom loot chest!
+*   Edit any loot chest! You can do **/editlc** **\--droplist <droplist-id>** to change the droplist of the chest! You can also just do **/editlc** with custom loot chests to edit the items of your own droplist and after that just do **/generatelc** to confirm the changes.
+*   Delete any loot chest with **/deletelc**!
 
-- **Gradle sync fails in IntelliJ** –
-  _Check that Java 25 is installed and configured under File → Project Structure → SDKs._
-- **Build fails with missing dependencies** –
-  _Run `./gradlew build --refresh-dependencies`. Make sure you have internet access!_
-- **Permission denied on `./gradlew`** –
-  _Run `chmod +x gradlew` (macOS/Linux)._
-- **Hot-reload doesn't work** –
-  _Verify you're using JetBrains Runtime, not a regular JDK._
+### Roadmap
 
-## Resources
+*   It's empty...it's up to you to send a suggestion!
 
-- [Hytale Modding Guides](https://hytalemodding.dev)
-- [Hytale Modding Discord](https://discord.gg/hytalemodding)
-- [ScaffoldIt Plugin Docs](https://scaffoldit.dev)
+#### **This mod is fully released but game updates can break the mod, so always check the mod description before a major update of the game and never use it in a pre-release unless i say you can do it!**
 
-## License
-
-Add your own after copying the template, though we recommend using MIT, BSD, or Apache to keep
-the modding community open!
+#### **If you find bugs feel free to report them or help me fix them if you want!**
