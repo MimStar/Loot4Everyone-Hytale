@@ -1,0 +1,175 @@
+$C = "../Common.ui";
+
+$C.@DecoratedContainer {
+  Anchor: (Width: 600, Height: 550);
+
+  #Title {
+    Group {
+      $C.@Title {
+        @Text = "Loot4Everyone config";
+      }
+    }
+  }
+
+  #Content {
+    LayoutMode: Left;
+
+    Group #Main {
+      LayoutMode: Top;
+
+      Group #IndexList {
+        Anchor: (Width: 580);
+        FlexWeight: 1;
+        LayoutMode: TopScrolling;
+        Padding: (Left: 4);
+        ScrollbarStyle: $C.@DefaultScrollbarStyle;
+
+        Group #IndexCards {
+          LayoutMode: Top;
+
+          Group #CanPlayerBreakLootChests {
+            LayoutMode: Left;
+            Padding: (Top: 8, Bottom: 8, Left: 8, Right: 8);
+            Label {
+              Text: "CanPlayersBreakLootChests";
+              Style: (
+                FontSize: 16,
+                RenderBold: true,
+                TextColor: #ffffff
+              );
+            }
+            Label {
+              FlexWeight: 1;
+            }
+            $C.@DropdownBox #CanPlayerBreakLootChestsDropdown {
+              Anchor: (Width: 262, Height: 20);
+              Style: @DefaultDropdownBoxStyle;
+            }
+          }
+
+          Group #IsLootRandom {
+            LayoutMode: Left;
+            Padding: (Top: 8, Bottom: 8, Left: 8, Right: 8);
+            Label {
+              Text: "IsLootRandom";
+              Style: (
+                FontSize: 16,
+                RenderBold: true,
+                TextColor: #ffffff
+              );
+            }
+            Label {
+              FlexWeight: 1;
+            }
+            $C.@DropdownBox #IsLootRandomDropdown {
+              Anchor: (Width: 262, Height: 20);
+              Style: @DefaultDropdownBoxStyle;
+            }
+          }
+
+          Group #IsMessageAppear {
+            LayoutMode: Left;
+            Padding: (Top: 8, Bottom: 8, Left: 8, Right: 8);
+            Label {
+              Text: "IsMessageAppear";
+              Style: (
+                FontSize: 16,
+                RenderBold: true,
+                TextColor: #ffffff
+              );
+            }
+            Label {
+              FlexWeight: 1;
+            }
+            $C.@DropdownBox #IsMessageAppearDropdown {
+              Anchor: (Width: 262, Height: 20);
+              Style: @DefaultDropdownBoxStyle;
+            }
+          }
+
+          Group #IsParticlesAppear {
+            LayoutMode: Left;
+            Padding: (Top: 8, Bottom: 8, Left: 8, Right: 8);
+            Label {
+              Text: "IsParticlesAppear";
+              Style: (
+                FontSize: 16,
+                RenderBold: true,
+                TextColor: #ffffff
+              );
+            }
+            Label {
+              FlexWeight: 1;
+            }
+            $C.@DropdownBox #IsParticlesAppearDropdown {
+              Anchor: (Width: 262, Height: 20);
+              Style: @DefaultDropdownBoxStyle;
+            }
+          }
+
+          Group #NextLootResetInterval {
+            LayoutMode: Left;
+            Padding: (Top: 8, Bottom: 8, Left: 8, Right: 8);
+
+            Label #NextLootResetIntervalLabel {
+              Text: "NextLootResetInterval";
+              Style: (
+                FontSize: 16,
+                RenderBold: true,
+                TextColor: #ffffff
+              );
+            }
+
+            Label {
+              FlexWeight: 1;
+            }
+
+            $C.@DropdownBox #LootResetDropdown {
+              Anchor: (Width: 120, Height: 20);
+              Style: @DefaultDropdownBoxStyle;
+            }
+
+            $C.@NumberField #NextLootResetIntervalDaysNumberField {
+              Anchor: (Left: 10, Width: 55, Height: 20);
+              Format: (MaxDecimalPlaces: 3, Step: 1);
+            }
+            $C.@NumberField #NextLootResetIntervalHoursNumberField {
+              Anchor: (Left: 5, Width: 55, Height: 20);
+              Format: (MaxDecimalPlaces: 3, Step: 1);
+            }
+            $C.@NumberField #NextLootResetIntervalMinutesNumberField {
+              Anchor: (Left: 5, Width: 55, Height: 20);
+              Format: (MaxDecimalPlaces: 3, Step: 1);
+            }
+            $C.@NumberField #NextLootResetIntervalSecondsNumberField {
+              Anchor: (Left: 5, Width: 55, Height: 20);
+              Format: (MaxDecimalPlaces: 3, Step: 1);
+            }
+          }
+
+          Group #ParticlesColorTitle{
+            LayoutMode: Center;
+            Label {
+              Anchor: (Top: 20);
+              Text: "Particles Color";
+              Style: (
+                FontSize: 16,
+                RenderBold: true,
+                TextColor: #ffffff
+              );
+            }
+          }
+
+          Group #ParticlesColor {
+            LayoutMode: Center;
+            ColorPicker #ParticlesColorPicker {
+              Anchor: (Width: 240, Height: 220, Top: 10);
+              Format: Rgb;
+              Style: $C.@DefaultColorPickerStyle;
+            }
+          }
+        }
+      }
+    }
+  }
+}

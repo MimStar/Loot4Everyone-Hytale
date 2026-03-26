@@ -1,20 +1,19 @@
 {
-    "Group": "HytaleModding",
-    "Name": "ExamplePlugin",
-    "Version": "0.0.0",
-    "Description": "Description of your plugin",
+    "Group": "MimStar",
+    "Name": "Loot4Everyone",
+    "Version": "1.3.6",
+    "Description": "Loot chests for every player!",
     "Authors": [
         {
-            "Name": "Your Name",
-            "Email": "your.email@example.com",
-            "Url": "https://your-website.com"
+            "Name": "MimStar"
         }
     ],
-    "Website": "https://your-plugin-website.com",
     "DisabledByDefault": false,
-    "IncludesAssetPack": false,
-    "Dependencies": {},
+    "IncludesAssetPack": true,
+    "Dependencies": {
+        "Hytale:BlockModule": "*"
+    },
     "OptionalDependencies": {},
-    "ServerVersion": "*",
-    "Main": "dev.hytalemodding.ExamplePlugin"
+    "ServerVersion": "2026.03.26-89796e57b",
+    "Main": "org.mimstar.plugin.Loot4Everyone"
 }

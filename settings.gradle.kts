@@ -1,4 +1,4 @@
-rootProject.name = "dev.hytalemodding"
+rootProject.name = "Loot4EveryoneHytale"
 
 plugins {
     // See documentation on https://scaffoldit.dev
@@ -21,8 +21,8 @@ hytale {
     }
 
     manifest {
-        Group = "HytaleModding"
-        Name = "ExamplePlugin"
-        Main = "dev.hytalemodding.ExamplePlugin"
+        Group = "MimStar"
+        Name = "Loot4Everyone"
+        Main = "org.mimstar.plugin.Loot4Everyone"
     }
 }

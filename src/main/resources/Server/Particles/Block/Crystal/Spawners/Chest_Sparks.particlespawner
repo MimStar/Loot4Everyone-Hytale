@@ -1,0 +1,126 @@
+{
+  "RenderMode": "Erosion",
+  "EmitOffset": {
+    "X": {
+      "Min": 0.3,
+      "Max": 0.6
+    },
+    "Y": {
+      "Min": 0,
+      "Max": 0.6
+    },
+    "Z": {
+      "Min": 0.3,
+      "Max": 0.6
+    }
+  },
+  "ParticleRotationInfluence": "Billboard",
+  "LinearFiltering": true,
+  "LightInfluence": 0.0,
+  "ParticleRotateWithSpawner": false,
+  "TrailSpawnerPositionMultiplier": 1,
+  "TrailSpawnerRotationMultiplier": 1,
+  "MaxConcurrentParticles": 2,
+  "ParticleLifeSpan": {
+    "Min": 0.3333333333333333,
+    "Max": 0.8
+  },
+  "SpawnRate": {
+    "Min": 1.5,
+    "Max": 2
+  },
+  "InitialVelocity": {
+    "Speed": {
+      "Min": 0.06,
+      "Max": 0.06
+    },
+    "Yaw": {
+      "Min": 0,
+      "Max": 0
+    },
+    "Pitch": {
+      "Min": 90,
+      "Max": 90
+    }
+  },
+  "Attractors": [
+    {
+      "DampingMultiplier": {
+        "X": 0.7350918906249999,
+        "Y": 0.7350918906249999,
+        "Z": 0.7350918906249999
+      }
+    }
+  ],
+  "TotalParticles": {
+    "Min": -1,
+    "Max": -1
+  },
+  "Particle": {
+    "Texture": "Particles/Textures/Basic/Glow_Star.png",
+    "FrameSize": {
+      "Width": 32,
+      "Height": 32
+    },
+    "ScaleRatioConstraint": "OneToOne",
+    "Animation": {
+      "0": {
+        "FrameIndex": {
+          "Min": 0,
+          "Max": 0
+        },
+        "Scale": {
+          "X": {
+            "Min": 1,
+            "Max": 1
+          }
+        },
+        "Opacity": 0
+      },
+      "20": {
+        "Scale": {
+          "X": {
+            "Min": 2,
+            "Max": 1.5
+          }
+        },
+        "Opacity": 1
+      },
+      "40": {
+        "Scale": {
+          "X": {
+            "Min": 4,
+            "Max": 4
+          }
+        },
+        "Opacity": 1
+      },
+      "100": {
+        "Scale": {
+          "X": {
+            "Min": 1,
+            "Max": 2
+          }
+        },
+        "Opacity": 0
+      }
+    },
+    "InitialAnimationFrame": {
+      "Scale": {
+        "X": {
+          "Min": 0.01,
+          "Max": 0.1
+        },
+        "Y": {
+          "Min": 0.1,
+          "Max": 0.2
+        }
+      },
+      "Opacity": 0.576,
+      "FrameIndex": {
+        "Min": 0,
+        "Max": 0
+      }
+    }
+  }
+}

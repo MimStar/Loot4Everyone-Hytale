@@ -1,0 +1,410 @@
+package org.mimstar.plugin.components;
+
+import com.hypixel.hytale.codec.Codec;
+import com.hypixel.hytale.codec.ExtraInfo;
+import com.hypixel.hytale.codec.KeyedCodec;
+import com.hypixel.hytale.codec.builder.BuilderCodec;
+import com.hypixel.hytale.codec.codecs.map.MapCodec;
+import com.hypixel.hytale.codec.schema.SchemaContext;
+import com.hypixel.hytale.codec.schema.config.ArraySchema;
+import com.hypixel.hytale.codec.schema.config.Schema;
+import com.hypixel.hytale.codec.util.RawJsonReader;
+import com.hypixel.hytale.component.Component;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.bson.*;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class PlayerLoot implements Component<EntityStore> {
+
+    private static final String KEY_ITEMS = "Items";
+    private static final String KEY_DISCOVERED = "Discovered";
+    private static final String KEY_ID = "id";
+    private static final String KEY_Q = "q";
+    private static final String KEY_D = "d";
+    private static final String KEY_MD = "md";
+    private static final String KEY_META = "meta";
+
+    private transient int tickTimer = 0;
+
+    public static class ChestData {
+        public List<ItemStack> items = new ArrayList<>();
+        public boolean discovered = false;
+
+        public ChestData() {}
+
+        public ChestData(List<ItemStack> items, boolean discovered) {
+            this.items = items != null ? new ArrayList<>(items) : new ArrayList<>();
+            this.discovered = discovered;
+        }
+
+        public ChestData(ChestData other) {
+            this.items = new ArrayList<>(other.items);
+            this.discovered = other.discovered;
+        }
+
+        public static final Codec<ChestData> INTERNAL_CODEC = BuilderCodec.builder(ChestData.class, ChestData::new)
+                .addField(new KeyedCodec<>(KEY_ITEMS, new ItemStackListCodec()), (d, v) -> d.items = v, d -> d.items)
+                .addField(new KeyedCodec<>(KEY_DISCOVERED, Codec.BOOLEAN), (d, v) -> d.discovered = v, d -> d.discovered)
+                .build();
+    }
+
+    public static class LegacyChestDataCodec implements Codec<ChestData> {
+        @Nonnull
+        @Override
+        public ChestData decode(@Nonnull BsonValue value, @Nonnull ExtraInfo extraInfo) {
+            if (value.isString()) {
+                return parseLegacyJson(value.asString().getValue());
+            } else if (value.isArray()) {
+                List<ItemStack> items = ItemStackListCodec.deserializeBsonArray(value.asArray());
+                return new ChestData(items, !items.isEmpty());
+            } else if (value.isDocument()) {
+                return ChestData.INTERNAL_CODEC.decode(value, extraInfo);
+            }
+            return new ChestData();
+        }
+
+        @Nonnull
+        @Override
+        public ChestData decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
+            reader.consumeWhiteSpace();
+            int firstChar = reader.peek();
+
+            if (firstChar == '"') {
+                return parseLegacyJson(reader.readString());
+            } else if (firstChar == '[') {
+                List<ItemStack> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
+                return new ChestData(items, !items.isEmpty());
+            } else {
+                List<ItemStack> items = new ArrayList<>();
+                boolean discovered = false;
+
+                reader.expect('{');
+                reader.consumeWhiteSpace();
+
+                if (reader.tryConsume('}')) return new ChestData(items, discovered);
+
+                while (true) {
+                    reader.consumeWhiteSpace();
+                    String key = reader.readString();
+                    reader.consumeWhiteSpace();
+                    reader.expect(':');
+                    reader.consumeWhiteSpace();
+
+                    switch (key) {
+                        case KEY_ITEMS -> items = new ItemStackListCodec().decodeJson(reader, extraInfo);
+                        case KEY_DISCOVERED -> discovered = reader.readBooleanValue();
+                        default -> reader.skipValue();
+                    }
+
+                    reader.consumeWhiteSpace();
+                    if (reader.tryConsume('}')) break;
+                    reader.expect(',');
+                }
+                return new ChestData(items, discovered);
+            }
+        }
+
+        private ChestData parseLegacyJson(String json) {
+            if (json == null || json.isEmpty()) return new ChestData();
+            try {
+                String trimmed = json.trim();
+                if (trimmed.startsWith("[")) {
+                    List<ItemStack> items = ItemStackListCodec.deserializeBsonArray(BsonArray.parse(json));
+                    return new ChestData(items, !items.isEmpty());
+                }
+                BsonDocument doc = BsonDocument.parse(json);
+                List<ItemStack> items = new ArrayList<>();
+                boolean discovered = false;
+
+                if (doc.containsKey(KEY_ITEMS)) {
+                    items = ItemStackListCodec.deserializeBsonArray(doc.getArray(KEY_ITEMS));
+                    if (!doc.containsKey(KEY_DISCOVERED)) discovered = !items.isEmpty();
+                }
+                if (doc.containsKey(KEY_DISCOVERED)) discovered = doc.getBoolean(KEY_DISCOVERED).getValue();
+
+                return new ChestData(items, discovered);
+            } catch (Exception e) {
+                System.err.println("Error migrating player loot data: " + e.getMessage());
+                return new ChestData();
+            }
+        }
+
+        @Nonnull
+        @Override
+        public BsonValue encode(@Nonnull ChestData data, @Nonnull ExtraInfo extraInfo) {
+            return ChestData.INTERNAL_CODEC.encode(data, extraInfo);
+        }
+
+        @Nonnull
+        @Override
+        public Schema toSchema(@Nonnull SchemaContext context) {
+            return ChestData.INTERNAL_CODEC.toSchema(context);
+        }
+    }
+
+    public static final BuilderCodec<PlayerLoot> CODEC = BuilderCodec.builder(PlayerLoot.class, PlayerLoot::new)
+            .addField(new KeyedCodec<>("Templates", new MapCodec<>(new LegacyChestDataCodec(), ConcurrentHashMap::new)),
+                    (data, value) -> data.lootData = new ConcurrentHashMap<>(value),
+                    data -> data.lootData)
+            .build();
+
+    private Map<String, ChestData> lootData;
+
+    public PlayerLoot() {
+        this.lootData = new ConcurrentHashMap<>();
+    }
+
+    public PlayerLoot(PlayerLoot other) {
+        this.lootData = new ConcurrentHashMap<>();
+        for (Map.Entry<String, ChestData> entry : other.lootData.entrySet()) {
+            this.lootData.put(entry.getKey(), new ChestData(entry.getValue()));
+        }
+    }
+
+    @Nullable
+    @Override
+    public Component<EntityStore> clone() {
+        return new PlayerLoot(this);
+    }
+
+    public static String getDeprecatedKey(int x, int y, int z){
+        return x + "," + y + "," + z;
+    }
+
+    public static String getKey(int x, int y, int z, String world_name) {
+        return x + "," + y + "," + z + "," + world_name;
+    }
+
+    public boolean hasDeprecatedData(int x, int y, int z){
+        return lootData.containsKey(getDeprecatedKey(x, y, z));
+    }
+
+    public void replaceDeprecatedData(int x, int y, int z, String world_name){
+        String oldKey = getDeprecatedKey(x, y, z);
+        ChestData data = lootData.get(oldKey);
+
+        if (data != null) {
+            lootData.put(getKey(x, y, z, world_name), data);
+            lootData.remove(oldKey);
+        }
+    }
+
+    public void resetChest(int x, int y, int z, String world_name) {
+        lootData.remove(getKey(x,y,z,world_name));
+        lootData.remove(getDeprecatedKey(x,y,z));
+    }
+
+    public void resetAllChests() {
+        lootData.clear();
+    }
+
+    public boolean isFirstTime(int x, int y, int z, String world_name) {
+        String key = getKey(x, y, z, world_name);
+
+        if (!lootData.containsKey(key) && hasDeprecatedData(x, y, z)) {
+            replaceDeprecatedData(x, y, z, world_name);
+        }
+
+        ChestData data = lootData.get(key);
+        return data == null || data.items.isEmpty();
+    }
+
+    public boolean isDiscovered(int x, int y, int z, String world_name) {
+        if (!lootData.containsKey(getKey(x, y, z, world_name)) && hasDeprecatedData(x, y, z)) {
+            replaceDeprecatedData(x, y, z, world_name);
+        }
+        ChestData data = lootData.get(getKey(x, y, z, world_name));
+        return data != null && data.discovered;
+    }
+
+    public void setDiscovered(int x, int y, int z, String world_name, boolean discovered) {
+        String key = getKey(x, y, z, world_name);
+        lootData.compute(key, (k, v) -> {
+            if (v == null) {
+                return new ChestData(new ArrayList<>(), discovered);
+            }
+            v.discovered = discovered;
+            return v;
+        });
+    }
+
+    public List<ItemStack> getInventory(int x, int y, int z, String world_name) {
+        if (!lootData.containsKey(getKey(x, y, z, world_name)) && hasDeprecatedData(x, y, z)) {
+            replaceDeprecatedData(x, y, z, world_name);
+        }
+
+        ChestData data = lootData.get(getKey(x, y, z, world_name));
+        return data != null ? new ArrayList<>(data.items) : new ArrayList<>();
+    }
+
+    public void setInventory(int x, int y, int z, String world_name, List<ItemStack> items) {
+        String key = getKey(x, y, z, world_name);
+        lootData.compute(key, (k, v) -> {
+            if (v == null) {
+                return new ChestData(new ArrayList<>(items), true);
+            }
+            v.items = new ArrayList<>(items);
+            return v;
+        });
+    }
+
+    public void incrementTimer() {
+        this.tickTimer++;
+    }
+
+    public int getTimer() {
+        return this.tickTimer;
+    }
+
+    public void resetTimer() {
+        this.tickTimer = 0;
+    }
+
+    public static class ItemStackListCodec implements Codec<List<ItemStack>> {
+        @Nonnull
+        @Override
+        public List<ItemStack> decode(@Nonnull BsonValue bsonValue, @Nonnull ExtraInfo extraInfo) {
+            return deserializeBsonArray(bsonValue.asArray());
+        }
+
+        @Nonnull
+        @Override
+        public List<ItemStack> decodeJson(@Nonnull RawJsonReader reader, @Nonnull ExtraInfo extraInfo) throws IOException {
+            List<ItemStack> list = new ArrayList<>();
+            reader.consumeWhiteSpace();
+            reader.expect('[');
+            reader.consumeWhiteSpace();
+
+            if (reader.tryConsume(']')) return list;
+
+            while (true) {
+                reader.consumeWhiteSpace();
+                int c = reader.peek();
+
+                if (c == 'n') {
+                    reader.skip(4);
+                    list.add(null);
+                } else if (c == '{') {
+                    list.add(decodeItemStackJson(reader));
+                } else if (c == '"') {
+                    reader.skipValue();
+                } else {
+                    reader.skipValue();
+                }
+
+                reader.consumeWhiteSpace();
+                if (reader.tryConsume(']')) break;
+
+                if (!reader.tryConsume(',')) {
+                    if (reader.peek() != ']') {
+                        throw new IOException("Expected ',' or ']' but found: " + (char)reader.peek());
+                    }
+                }
+            }
+            return list;
+        }
+
+        private ItemStack decodeItemStackJson(RawJsonReader reader) throws IOException {
+            reader.expect('{');
+            reader.consumeWhiteSpace();
+            if (reader.tryConsume('}')) return new ItemStack("air", 0, 0, 0, null);
+
+            String id = "air";
+            int q = 1;
+            double d = 0;
+            double md = 0;
+            BsonDocument meta = null;
+
+            while (true) {
+                reader.consumeWhiteSpace();
+                String key = reader.readString();
+                reader.consumeWhiteSpace();
+                reader.expect(':');
+                reader.consumeWhiteSpace();
+
+                switch (key) {
+                    case KEY_ID -> id = reader.readString().intern();
+                    case KEY_Q -> q = (int) readNumberSafe(reader, 1.0);
+                    case KEY_D -> d = readNumberSafe(reader,0.0);
+                    case KEY_MD -> md = readNumberSafe(reader,0.0);
+                    case KEY_META -> meta = RawJsonReader.readBsonDocument(reader);
+                    default -> reader.skipValue();
+                }
+
+                reader.consumeWhiteSpace();
+                if (reader.tryConsume('}')) break;
+                reader.expect(',');
+            }
+            return new ItemStack(id, q, d, md, meta);
+        }
+
+        private double readNumberSafe(RawJsonReader reader, double defaultValue) throws IOException {
+            reader.consumeWhiteSpace();
+            int c = reader.peek();
+
+            if (Character.isDigit(c) || c == '-' || c == '+' || c == '.') {
+                try {
+                    return reader.readDoubleValue();
+                } catch (Exception e) {
+                    return defaultValue;
+                }
+            }
+
+            return defaultValue;
+        }
+
+        public static List<ItemStack> deserializeBsonArray(BsonArray array) {
+            List<ItemStack> items = new ArrayList<>();
+            if (array == null) return items;
+            for (BsonValue value : array) {
+                if (value.isNull()) { items.add(null); continue; }
+                if (value.isDocument()) {
+                    try {
+                        BsonDocument doc = value.asDocument();
+                        String itemId = doc.getString(KEY_ID).getValue().intern();
+                        int quantity = doc.getInt32(KEY_Q).getValue();
+                        double durability = doc.getDouble(KEY_D).getValue();
+                        double maxDurability = doc.getDouble(KEY_MD).getValue();
+                        BsonDocument metadata = doc.containsKey(KEY_META) ? doc.getDocument(KEY_META) : null;
+                        items.add(new ItemStack(itemId, quantity, durability, maxDurability, metadata));
+                    } catch (Exception ignored) {}
+                }
+            }
+            return items;
+        }
+
+        @Nonnull
+        @Override
+        public BsonValue encode(@Nonnull List<ItemStack> items, @Nonnull ExtraInfo extraInfo) {
+            BsonArray array = new BsonArray();
+            for (ItemStack stack : items) {
+                if (stack != null) {
+                    BsonDocument doc = new BsonDocument();
+                    doc.append(KEY_ID, new BsonString(stack.getItemId()));
+                    doc.append(KEY_Q, new BsonInt32(stack.getQuantity()));
+                    doc.append(KEY_D, new BsonDouble(stack.getDurability()));
+                    doc.append(KEY_MD, new BsonDouble(stack.getMaxDurability()));
+                    if (stack.getMetadata() != null) doc.append(KEY_META, stack.getMetadata());
+                    array.add(doc);
+                } else {
+                    array.add(new BsonNull());
+                }
+            }
+            return array;
+        }
+
+        @Nonnull
+        @Override
+        public Schema toSchema(@Nonnull SchemaContext context) {
+            return new ArraySchema();
+        }
+    }
+}
