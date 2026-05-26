@@ -3,7 +3,6 @@ package org.mimstar.plugin.commands;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.NameMatching;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -20,6 +19,7 @@ import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.TargetUtil;
+import org.joml.Vector3i;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.components.PlayerLoot;
 import org.mimstar.plugin.resources.LootChestTemplate;
@@ -86,7 +86,7 @@ public class ResetLootChestCommand extends AbstractAsyncCommand {
                 Vector3i targetBlock = TargetUtil.getTargetBlock(ref, 10.0, store);
 
                 ChunkStore chunkStore = finalWorld.getChunkStore();
-                long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.getX(), targetBlock.getZ());
+                long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.x(), targetBlock.z());
                 Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
                 if (chunkRef == null) return;
@@ -94,7 +94,7 @@ public class ResetLootChestCommand extends AbstractAsyncCommand {
                 BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
                 if (blockComponentChunk == null) return;
 
-                int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ());
+                int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.x(), targetBlock.y(), targetBlock.z());
                 Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
 
                 if (blockRef == null) return;
@@ -112,15 +112,15 @@ public class ResetLootChestCommand extends AbstractAsyncCommand {
                 }
 
                 LootChestTemplate lootChestTemplate = finalWorld.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
-                if (!lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {
+                if (!lootChestTemplate.hasTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z())) {
                     commandContext.sendMessage(Message.raw("Please look at a valid loot chest to reset it (or use --all true for all chests)."));
                     return;
                 }
 
                 final Vector3i finalTargetBlock = targetBlock;
                 resetAction = (playerLoot) -> {
-                    if (!playerLoot.isFirstTime(finalTargetBlock.getX(), finalTargetBlock.getY(), finalTargetBlock.getZ(), worldName)) {
-                        playerLoot.resetChest(finalTargetBlock.getX(), finalTargetBlock.getY(), finalTargetBlock.getZ(), worldName);
+                    if (!playerLoot.isFirstTime(finalTargetBlock.x(), finalTargetBlock.y(), finalTargetBlock.z(), worldName)) {
+                        playerLoot.resetChest(finalTargetBlock.x(), finalTargetBlock.y(), finalTargetBlock.z(), worldName);
                     }
                 };
             } else {
@@ -254,7 +254,7 @@ public class ResetLootChestCommand extends AbstractAsyncCommand {
                         }
                         return holder;
                     })
-                    .thenCompose(holder -> storage.save(uuid, holder))
+                    .thenCompose(holder -> storage.save(uuid, holder, true))
                     .thenRun(counter::incrementAndGet)
                     .exceptionally(ex -> null);
 

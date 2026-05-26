@@ -4,7 +4,6 @@ import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.PlaceBlockEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
@@ -13,6 +12,7 @@ import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.joml.Vector3i;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
@@ -36,10 +36,10 @@ public class PlaceBlockEventListener extends EntityEventSystem<EntityStore, Plac
         if (item != null && item.getItemId().toLowerCase().contains("chest")) {
             Vector3i pos = event.getTargetBlock();
 
-            if (isProtectedChest(player, pos.getX() + 1, pos.getY(), pos.getZ()) ||
-                    isProtectedChest(player, pos.getX() - 1, pos.getY(), pos.getZ()) ||
-                    isProtectedChest(player, pos.getX(), pos.getY(), pos.getZ() + 1) ||
-                    isProtectedChest(player, pos.getX(), pos.getY(), pos.getZ() - 1)) {
+            if (isProtectedChest(player, pos.x() + 1, pos.y(), pos.z()) ||
+                    isProtectedChest(player, pos.x() - 1, pos.y(), pos.z()) ||
+                    isProtectedChest(player, pos.x(), pos.y(), pos.z() + 1) ||
+                    isProtectedChest(player, pos.x(), pos.y(), pos.z() - 1)) {
 
                 event.setCancelled(true);
             }

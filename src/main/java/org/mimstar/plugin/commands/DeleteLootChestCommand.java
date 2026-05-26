@@ -3,7 +3,6 @@ package org.mimstar.plugin.commands;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
@@ -17,6 +16,7 @@ import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.TargetUtil;
+import org.joml.Vector3i;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.components.PlayerLoot;
 import org.mimstar.plugin.resources.LootChestTemplate;
@@ -37,16 +37,15 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
 
     @Override
     protected void execute(@Nonnull CommandContext commandContext, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-        Player executor = store.getComponent(ref, Player.getComponentType());
         Vector3i targetBlock = TargetUtil.getTargetBlock(ref, 10.0, store);
 
         if (targetBlock == null) {
-            executor.sendMessage(Message.raw("Please look at a block that can store items!"));
+            commandContext.sendMessage(Message.raw("Please look at a block that can store items!"));
             return;
         }
 
         ChunkStore chunkStore = world.getChunkStore();
-        long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.getX(), targetBlock.getZ());
+        long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.x(), targetBlock.z());
         Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
         if (chunkRef == null) return;
@@ -54,7 +53,7 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
         BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
         if (blockComponentChunk == null) return;
 
-        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ());
+        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.x(), targetBlock.y(), targetBlock.z());
         Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
 
         if (blockRef == null) return;
@@ -64,38 +63,38 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
         if (itemContainerState != null) {
 
             if (!itemContainerState.getWindows().isEmpty()) {
-                executor.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
+                commandContext.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
                 return;
             }
 
             LootChestTemplate lootChestTemplate = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
-            if (lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {
+            if (lootChestTemplate.hasTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z())) {
 
-                lootChestTemplate.removeTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ());
+                lootChestTemplate.removeTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z());
 
-                cleanupPlayerData(executor, targetBlock, world.getName(), store);
+                cleanupPlayerData(commandContext, targetBlock, world.getName(), store);
             } else {
-                executor.sendMessage(Message.raw("Please look at a registered loot container!"));
+                commandContext.sendMessage(Message.raw("Please look at a registered loot container!"));
             }
         } else {
-            executor.sendMessage(Message.raw("Please look at a loot container!"));
+            commandContext.sendMessage(Message.raw("Please look at a loot container!"));
         }
     }
 
-    private void cleanupPlayerData(Player executor, Vector3i targetBlock, String worldName, Store<EntityStore> store) {
+    private void cleanupPlayerData(CommandContext context, Vector3i targetBlock, String worldName, Store<EntityStore> store) {
         PlayerStorage storage = Universe.get().getPlayerStorage();
         Set<UUID> allPlayers;
         try {
             allPlayers = storage.getPlayers();
         } catch (IOException e) {
-            executor.sendMessage(Message.raw("Error retrieving player list for cleanup: " + e.getMessage()));
+            context.sendMessage(Message.raw("Error retrieving player list for cleanup: " + e.getMessage()));
             return;
         }
 
         Consumer<PlayerLoot> resetAction = (playerLoot) -> {
 
-            if (!playerLoot.isFirstTime(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), worldName)) {
-                playerLoot.resetChest(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), worldName);
+            if (!playerLoot.isFirstTime(targetBlock.x(), targetBlock.y(), targetBlock.z(), worldName)) {
+                playerLoot.resetChest(targetBlock.x(), targetBlock.y(), targetBlock.z(), worldName);
             }
         };
 
@@ -120,13 +119,13 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
 
         if (!offlinePlayers.isEmpty()) {
             AtomicInteger processedCount = new AtomicInteger(0);
-            recursiveBatchProcess(offlinePlayers.iterator(), storage, resetAction, executor, processedCount);
+            recursiveBatchProcess(offlinePlayers.iterator(), storage, resetAction, context, processedCount);
         } else {
-            executor.sendMessage(Message.raw("Loot container deleted!"));
+            context.sendMessage(Message.raw("Loot container deleted!"));
         }
     }
 
-    private void recursiveBatchProcess(Iterator<UUID> playerIterator, PlayerStorage storage, Consumer<PlayerLoot> action, Player executor, AtomicInteger counter) {
+    private void recursiveBatchProcess(Iterator<UUID> playerIterator, PlayerStorage storage, Consumer<PlayerLoot> action, CommandContext context, AtomicInteger counter) {
         List<CompletableFuture<Void>> batchFutures = new ArrayList<>();
 
         for (int i = 0; i < BATCH_SIZE && playerIterator.hasNext(); i++) {
@@ -140,7 +139,7 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
                         }
                         return holder;
                     })
-                    .thenCompose(holder -> storage.save(uuid, holder))
+                    .thenCompose(holder -> storage.save(uuid, holder,true))
                     .thenRun(counter::incrementAndGet)
                     .exceptionally(ex -> null);
 
@@ -148,11 +147,11 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
         }
 
         if (batchFutures.isEmpty()) {
-            executor.sendMessage(Message.raw("Loot container deleted!"));
+            context.sendMessage(Message.raw("Loot container deleted!"));
             return;
         }
 
         CompletableFuture.allOf(batchFutures.toArray(new CompletableFuture[0]))
-                .thenRun(() -> recursiveBatchProcess(playerIterator, storage, action, executor, counter));
+                .thenRun(() -> recursiveBatchProcess(playerIterator, storage, action, context, counter));
     }
 }

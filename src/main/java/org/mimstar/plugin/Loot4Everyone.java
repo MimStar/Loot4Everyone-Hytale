@@ -30,7 +30,6 @@ import org.mimstar.plugin.systems.LootChestRangeSystem;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * This class serves as the entrypoint for your plugin. Use the setup method to register into game registries or add

@@ -3,7 +3,6 @@ package org.mimstar.plugin.commands;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.item.config.ItemDropList;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -25,6 +24,7 @@ import com.hypixel.hytale.server.core.universe.world.worldgen.IWorldGen;
 import com.hypixel.hytale.server.core.util.TargetUtil;
 import com.hypixel.hytale.server.worldgen.chunk.ChunkGenerator;
 import com.hypixel.hytale.server.worldgen.chunk.ZoneBiomeResult;
+import org.joml.Vector3i;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
@@ -48,12 +48,12 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
         Player executor = store.getComponent(ref, Player.getComponentType());
         Vector3i targetBlock = TargetUtil.getTargetBlock(ref, 10.0, store);
         if (targetBlock == null){
-            executor.sendMessage(Message.raw("Please loot at a block that can store items!"));
+            commandContext.sendMessage(Message.raw("Please loot at a block that can store items!"));
             return;
         }
 
         ChunkStore chunkStore = world.getChunkStore();
-        long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.getX(), targetBlock.getZ());
+        long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.x(), targetBlock.z());
         Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
         if (chunkRef == null) return;
@@ -61,7 +61,7 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
         BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
         if (blockComponentChunk == null) return;
 
-        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ());
+        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.x(), targetBlock.y(), targetBlock.z());
         Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
 
         if (blockRef == null) return;
@@ -71,13 +71,13 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
         if (itemContainerState != null) {
 
             if (!itemContainerState.getWindows().isEmpty()){
-                executor.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
+                commandContext.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
                 return;
             }
 
             LootChestTemplate lootChestTemplate = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
-            if (lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {
-                executor.sendMessage(Message.raw("This loot container already exists!"));
+            if (lootChestTemplate.hasTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z())) {
+                commandContext.sendMessage(Message.raw("This loot container already exists!"));
                 return;
             }
 
@@ -104,16 +104,16 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
                             for (int idx = 0; idx < stacks.size() && idx < slots.size(); idx++) {
                                 inventoryRandom.add(stacks.get(idx));
                             }
-                            lootChestTemplate.saveTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), inventoryRandom, dropList);
-                            executor.sendMessage(Message.raw("Your loot container has been generated based on the dropList you've provided!"));
+                            lootChestTemplate.saveTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z(), inventoryRandom, dropList);
+                            commandContext.sendMessage(Message.raw("Your loot container has been generated based on the dropList you've provided!"));
                         } else {
-                            executor.sendMessage(Message.raw("There has been an error in the process. Please try again!"));
+                            commandContext.sendMessage(Message.raw("There has been an error in the process. Please try again!"));
                         }
                     } else {
-                        executor.sendMessage(Message.raw("There has been an error in the process. Please try again!"));
+                        commandContext.sendMessage(Message.raw("There has been an error in the process. Please try again!"));
                     }
                 } else {
-                    executor.sendMessage(Message.raw("DropList is invalid"));
+                    commandContext.sendMessage(Message.raw("DropList is invalid"));
                 }
             }
             else{
@@ -134,7 +134,7 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
                     int seed = (int) world.getWorldConfig().getSeed();
                     String zoneName = "";
                     if (iWorldGen instanceof ChunkGenerator chunkGenerator) {
-                        ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, targetBlock.getX(), targetBlock.getZ());
+                        ZoneBiomeResult result = chunkGenerator.getZoneBiomeResultAt(seed, targetBlock.x(), targetBlock.z());
                         zoneName = result.getZoneResult().getZone().name(); // Ex: Zone1_Tier1
                     }
 
@@ -151,17 +151,17 @@ public class GenerateLootChestCommand extends AbstractPlayerCommand {
                     String dropListName = zoneName.replace("_", "_Encounters_");
 
                     List<ItemStack> items = new ArrayList<>();
-                    lootChestTemplate.saveTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), items, dropListName);
-                    executor.sendMessage(Message.raw("Your loot container has been generated based on the dropList of the zone!"));
+                    lootChestTemplate.saveTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z(), items, dropListName);
+                    commandContext.sendMessage(Message.raw("Your loot container has been generated based on the dropList of the zone!"));
                 }
                 else{
-                    lootChestTemplate.saveTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), currentItems,"custom");
-                    executor.sendMessage(Message.raw("Your loot container has been generated based on items inside!"));
+                    lootChestTemplate.saveTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z(), currentItems,"custom");
+                    commandContext.sendMessage(Message.raw("Your loot container has been generated based on items inside!"));
                 }
             }
         }
         else{
-            executor.sendMessage(Message.raw("Please loot at a block that can store items!"));
+            commandContext.sendMessage(Message.raw("Please loot at a block that can store items!"));
         }
     }
 }

@@ -5,11 +5,10 @@ import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.spatial.SpatialResource;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.Color;
 import com.hypixel.hytale.protocol.SoundCategory;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
@@ -23,9 +22,10 @@ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.universe.world.worldgen.IWorldGen;
 import com.hypixel.hytale.server.core.util.EventTitleUtil;
-import com.hypixel.hytale.server.core.util.TempAssetIdUtil;
 import com.hypixel.hytale.server.worldgen.chunk.ChunkGenerator;
 import com.hypixel.hytale.server.worldgen.chunk.ZoneBiomeResult;
+import org.joml.Vector3d;
+import org.joml.Vector3i;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.components.PlayerLoot;
 import org.mimstar.plugin.resources.LootChestConfig;
@@ -129,9 +129,9 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                             ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex()))
                                     );
 
-                                    int x = blockPosition.getX();
-                                    int y = blockPosition.getY();
-                                    int z = blockPosition.getZ();
+                                    int x = blockPosition.x();
+                                    int y = blockPosition.y();
+                                    int z = blockPosition.z();
 
                                     if (lootChestTemplate.hasTemplate(x, y, z)) {
 
@@ -166,7 +166,7 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                                             if (lootChestConfig.isMessageAppear()){
                                                 EventTitleUtil.showEventTitleToPlayer(playerRef, Message.raw("New loot chest discovered!"), Message.raw(dropListName), true);
-                                                int soundEventIndex = TempAssetIdUtil.getSoundEventIndex("SFX_Memories_Unlock_Local");
+                                                int soundEventIndex = SoundEvent.getAssetMap().getIndex("SFX_Memories_Unlock_Local");
                                                 if (soundEventIndex > 0) {
                                                     SoundUtil.playSoundEvent2dToPlayer(playerRef, soundEventIndex, SoundCategory.SFX);
                                                 }
@@ -200,18 +200,18 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                                     ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex()))
                                             );
 
-                                            int x = blockPosition.getX();
-                                            int y = blockPosition.getY();
-                                            int z = blockPosition.getZ();
+                                            int x = blockPosition.x();
+                                            int y = blockPosition.y();
+                                            int z = blockPosition.z();
 
                                             LootChestTemplate lootChestTemplate = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
                                             if (lootChestTemplate.hasTemplate(x, y, z)) {
 
                                                 if (playerLoot.isFirstTime(x, y, z, world.getName())) {
-                                                    double particle_x = blockPosition.getX() + 0.5;
-                                                    double particle_y = blockPosition.getY() + 1.5;
-                                                    double particle_z = blockPosition.getZ() + 0.5;
+                                                    double particle_x = blockPosition.x() + 0.5;
+                                                    double particle_y = blockPosition.y() + 1.5;
+                                                    double particle_z = blockPosition.z() + 0.5;
 
                                                     String color = lootChestConfig.getParticlesColor();
 

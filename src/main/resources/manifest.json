@@ -1,7 +1,7 @@
 {
     "Group": "MimStar",
     "Name": "Loot4Everyone",
-    "Version": "1.3.6",
+    "Version": "1.3.7",
     "Description": "Loot chests for every player!",
     "Authors": [
         {
@@ -14,6 +14,6 @@
         "Hytale:BlockModule": "*"
     },
     "OptionalDependencies": {},
-    "ServerVersion": "2026.03.26-89796e57b",
+    "ServerVersion": "0.5.0",
     "Main": "org.mimstar.plugin.Loot4Everyone"
 }

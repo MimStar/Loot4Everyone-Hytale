@@ -3,7 +3,6 @@ package org.mimstar.plugin.commands;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.item.config.ItemDrop;
 import com.hypixel.hytale.server.core.asset.type.item.config.ItemDropList;
@@ -23,6 +22,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.TargetUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.joml.Vector3i;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.resources.LootChestTemplate;
 
@@ -43,12 +43,12 @@ public class EditLootChestCommand extends AbstractPlayerCommand {
 
         Vector3i targetBlock = TargetUtil.getTargetBlock(ref, 10.0, store);
         if (targetBlock == null) {
-            executor.sendMessage(Message.raw("Please look at a loot container!"));
+            commandContext.sendMessage(Message.raw("Please look at a loot container!"));
             return;
         }
 
         ChunkStore chunkStore = world.getChunkStore();
-        long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.getX(), targetBlock.getZ());
+        long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.x(), targetBlock.z());
         Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
         if (chunkRef == null) return;
@@ -56,7 +56,7 @@ public class EditLootChestCommand extends AbstractPlayerCommand {
         BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
         if (blockComponentChunk == null) return;
 
-        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ());
+        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.x(), targetBlock.y(), targetBlock.z());
         Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
 
         if (blockRef == null) return;
@@ -64,18 +64,18 @@ public class EditLootChestCommand extends AbstractPlayerCommand {
         ItemContainerBlock itemContainerState = chunkStore.getStore().getComponent(blockRef, ItemContainerBlock.getComponentType());
 
         if (itemContainerState == null) {
-            executor.sendMessage(Message.raw("Please look at a loot container!"));
+            commandContext.sendMessage(Message.raw("Please look at a loot container!"));
             return;
         }
 
         if (!itemContainerState.getWindows().isEmpty()){
-            executor.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
+            commandContext.sendMessage(Message.raw("Someone is looking at the loot container, try again later."));
             return;
         }
 
         LootChestTemplate lootChestTemplate = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
-        if (!lootChestTemplate.hasTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ())) {
-            executor.sendMessage(Message.raw("No loot container found here. Use /generatelc first."));
+        if (!lootChestTemplate.hasTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z())) {
+            commandContext.sendMessage(Message.raw("No loot container found here. Use /generatelc first."));
             return;
         }
 
@@ -86,19 +86,19 @@ public class EditLootChestCommand extends AbstractPlayerCommand {
             if (itemDropList != null) {
                 List<ItemStack> newStacks = ItemModule.get().getRandomItemDrops(dropList);
 
-                lootChestTemplate.saveTemplate(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ(), newStacks, dropList);
+                lootChestTemplate.saveTemplate(targetBlock.x(), targetBlock.y(), targetBlock.z(), newStacks, dropList);
 
-                executor.sendMessage(Message.raw("Loot container updated to: " + dropList));
+                commandContext.sendMessage(Message.raw("Loot container updated to: " + dropList));
             } else {
-                executor.sendMessage(Message.raw("Invalid dropList."));
+                commandContext.sendMessage(Message.raw("Invalid dropList."));
             }
         } else {
-            String dropList = lootChestTemplate.getDropList(targetBlock.getX(),targetBlock.getY(),targetBlock.getZ());
+            String dropList = lootChestTemplate.getDropList(targetBlock.x(),targetBlock.y(),targetBlock.z());
             if (dropList != null && dropList.equals("undefined")){
-                executor.sendMessage(Message.raw("Loot container don't have a dropList you can't edit it"));
+                commandContext.sendMessage(Message.raw("Loot container don't have a dropList you can't edit it"));
             }
             else if (dropList != null && dropList.equals("custom")){
-                List<ItemStack> items = lootChestTemplate.getTemplate(targetBlock.getX(),targetBlock.getY(),targetBlock.getZ());
+                List<ItemStack> items = lootChestTemplate.getTemplate(targetBlock.x(),targetBlock.y(),targetBlock.z());
                 if (items != null){
                     if (itemContainerState.getItemContainer().getCapacity() >= items.size()){
                         ClearTransaction clearTransaction = itemContainerState.getItemContainer().clear();
@@ -108,19 +108,19 @@ public class EditLootChestCommand extends AbstractPlayerCommand {
                                 itemContainerState.getItemContainer().setItemStackForSlot(index_container, itemStack);
                                 index_container++;
                             }
-                            lootChestTemplate.removeTemplate(targetBlock.getX(),targetBlock.getY(),targetBlock.getZ());
-                            executor.sendMessage(Message.raw("Loot container can be edited, don't forget to do /generatelc to regenerate it!"));
+                            lootChestTemplate.removeTemplate(targetBlock.x(),targetBlock.y(),targetBlock.z());
+                            commandContext.sendMessage(Message.raw("Loot container can be edited, don't forget to do /generatelc to regenerate it!"));
                         }
                         else{
-                            executor.sendMessage(Message.raw("There has been an error in the process. Please try again!"));
+                            commandContext.sendMessage(Message.raw("There has been an error in the process. Please try again!"));
                         }
                     }
                     else{
-                        executor.sendMessage(Message.raw("Loot container can't contain the dropList"));
+                        commandContext.sendMessage(Message.raw("Loot container can't contain the dropList"));
                     }
                 }
                 else{
-                    executor.sendMessage(Message.raw("Loot container don't have items and can't be edited."));
+                    commandContext.sendMessage(Message.raw("Loot container don't have items and can't be edited."));
                 }
             }
             else if (dropList != null){
@@ -135,23 +135,23 @@ public class EditLootChestCommand extends AbstractPlayerCommand {
                                 itemContainerState.getItemContainer().setItemStackForSlot(index_container, itemStack);
                                 index_container++;
                             }
-                            lootChestTemplate.removeTemplate(targetBlock.getX(),targetBlock.getY(),targetBlock.getZ());
-                            executor.sendMessage(Message.raw("Loot container can be edited, don't forget to do /generatelc to regenerate it!"));
+                            lootChestTemplate.removeTemplate(targetBlock.x(),targetBlock.y(),targetBlock.z());
+                            commandContext.sendMessage(Message.raw("Loot container can be edited, don't forget to do /generatelc to regenerate it!"));
                         }
                         else{
-                            executor.sendMessage(Message.raw("There has been an error in the process. Please try again!"));
+                            commandContext.sendMessage(Message.raw("There has been an error in the process. Please try again!"));
                         }
                     }
                     else{
-                        executor.sendMessage(Message.raw("Loot container can't contain the dropList"));
+                        commandContext.sendMessage(Message.raw("Loot container can't contain the dropList"));
                     }
                 }
                 else{
-                    executor.sendMessage(Message.raw("Loot container have a dropList but can't be edited"));
+                    commandContext.sendMessage(Message.raw("Loot container have a dropList but can't be edited"));
                 }
             }
             else{
-                executor.sendMessage(Message.raw("Loot container don't have a dropList you can't edit it"));
+                commandContext.sendMessage(Message.raw("Loot container don't have a dropList you can't edit it"));
             }
         }
     }

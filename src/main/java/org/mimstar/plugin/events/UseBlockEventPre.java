@@ -4,7 +4,6 @@ import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.UseBlockEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
@@ -15,6 +14,7 @@ import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.joml.Vector3i;
 import org.mimstar.plugin.Loot4Everyone;
 import org.mimstar.plugin.components.OpenedContainerComponent;
 import org.mimstar.plugin.components.PlayerLoot;
@@ -43,7 +43,7 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
         Vector3i target = useBlockEventPre.getTargetBlock();
 
         ChunkStore chunkStore = player.getWorld().getChunkStore();
-        long chunkIndex = ChunkUtil.indexChunkFromBlock(target.getX(), target.getZ());
+        long chunkIndex = ChunkUtil.indexChunkFromBlock(target.x(), target.z());
         Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
         if (chunkRef == null) return;
@@ -51,7 +51,7 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
         BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
         if (blockComponentChunk == null) return;
 
-        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(target.getX(), target.getY(), target.getZ());
+        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(target.x(), target.y(), target.z());
         Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
 
         if (blockRef == null) return;
@@ -61,7 +61,7 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
         if (itemContainerState != null) {
             LootChestTemplate lootChestTemplate = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
-            if (useBlockEventPre.getInteractionType().toString().equals("Use") && lootChestTemplate.hasTemplate(target.getX(), target.getY(), target.getZ())) {
+            if (useBlockEventPre.getInteractionType().toString().equals("Use") && lootChestTemplate.hasTemplate(target.x(), target.y(), target.z())) {
 
                 if (!itemContainerState.getWindows().isEmpty()) {
                     useBlockEventPre.setCancelled(true);
@@ -74,21 +74,21 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                     return;
                 }
 
-                OpenedContainerComponent monitor = new OpenedContainerComponent(target.getX(), target.getY(), target.getZ());
+                OpenedContainerComponent monitor = new OpenedContainerComponent(target.x(), target.y(), target.z());
                 commandBuffer.addComponent(playerRef, Loot4Everyone.get().getContainerComponentType(), monitor);
 
                 LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
                 PlayerLoot playerLoot = store.getComponent(playerRef, Loot4Everyone.get().getPlayerLootcomponentType());
 
                 if (!lootChestConfig.isLootChestRandom()) {
-                    if (lootChestTemplate.getTemplate(target.getX(), target.getY(), target.getZ()).isEmpty()) {
-                        String droplist = lootChestTemplate.getDropList(target.getX(),target.getY(),target.getZ());
+                    if (lootChestTemplate.getTemplate(target.x(), target.y(), target.z()).isEmpty()) {
+                        String droplist = lootChestTemplate.getDropList(target.x(),target.y(),target.z());
                         if (droplist != null && !droplist.equals("undefined")) {
                             if (!droplist.equals("custom")) {
                                 if (droplist.contains("Tier5")) {
                                     int randomTier = ThreadLocalRandom.current().nextInt(1, 5);
                                     droplist = droplist.replace("Tier5", "Tier" + randomTier);
-                                    lootChestTemplate.setDropList(target.getX(), target.getY(), target.getZ(), droplist);
+                                    lootChestTemplate.setDropList(target.x(), target.y(), target.z(), droplist);
                                 }
 
                                 List<ItemStack> stacks = ItemModule.get().getRandomItemDrops(droplist);
@@ -115,7 +115,7 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                                     useBlockEventPre.setCancelled(true);
                                 }
                             } else {
-                                List<ItemStack> customStacks = lootChestTemplate.getTemplate(target.getX(), target.getY(), target.getZ());
+                                List<ItemStack> customStacks = lootChestTemplate.getTemplate(target.x(), target.y(), target.z());
 
                                 if (customStacks != null && !customStacks.isEmpty()) {
                                     short capacity = itemContainerState.getItemContainer().getCapacity();
@@ -163,26 +163,26 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                             items.add(itemContainerState.getItemContainer().getItemStack((short) i));
                         }
 
-                        lootChestTemplate.saveTemplate(target.getX(), target.getY(), target.getZ(), items, lootChestTemplate.getDropList(target.getX(), target.getY(), target.getZ()));
+                        lootChestTemplate.saveTemplate(target.x(), target.y(), target.z(), items, lootChestTemplate.getDropList(target.x(), target.y(), target.z()));
                     } else {
                         applyPersistentLoot(itemContainerState, playerLoot, lootChestTemplate, target, player.getWorld().getName());
                     }
                 }
                 else {
-                    if (playerLoot != null && !playerLoot.isFirstTime(target.getX(), target.getY(), target.getZ(), player.getWorld().getName())) {
-                        List<ItemStack> items = playerLoot.getInventory(target.getX(), target.getY(), target.getZ(), player.getWorld().getName());
+                    if (playerLoot != null && !playerLoot.isFirstTime(target.x(), target.y(), target.z(), player.getWorld().getName())) {
+                        List<ItemStack> items = playerLoot.getInventory(target.x(), target.y(), target.z(), player.getWorld().getName());
                         for (int i = 0; i < itemContainerState.getItemContainer().getCapacity(); i++) {
                             itemContainerState.getItemContainer().setItemStackForSlot((short) i, items.get(i));
                         }
                     } else {
-                        String droplist = lootChestTemplate.getDropList(target.getX(),target.getY(),target.getZ());
+                        String droplist = lootChestTemplate.getDropList(target.x(),target.y(),target.z());
                         if (droplist != null && !droplist.equals("undefined")) {
                             if (!droplist.equals("custom")) {
 
                                 if (droplist.contains("Tier5")){
                                     int randomTier = ThreadLocalRandom.current().nextInt(1,5);
                                     droplist = droplist.replace("Tier5","Tier" + randomTier);
-                                    lootChestTemplate.setDropList(target.getX(), target.getY(), target.getZ(), droplist);
+                                    lootChestTemplate.setDropList(target.x(), target.y(), target.z(), droplist);
                                 }
 
                                 List<ItemStack> stacks = ItemModule.get().getRandomItemDrops(droplist);
@@ -209,7 +209,7 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
                                 }
                             }
                             else{
-                                List<ItemStack> customStacks = lootChestTemplate.getTemplate(target.getX(), target.getY(), target.getZ());
+                                List<ItemStack> customStacks = lootChestTemplate.getTemplate(target.x(), target.y(), target.z());
 
                                 if (customStacks != null && !customStacks.isEmpty()) {
                                     short capacity = itemContainerState.getItemContainer().getCapacity();
@@ -261,10 +261,10 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
     }
     private void applyPersistentLoot(ItemContainerBlock state, PlayerLoot playerLoot, LootChestTemplate template, Vector3i pos, String worldName) {
         List<ItemStack> items;
-        if (playerLoot != null && !playerLoot.isFirstTime(pos.getX(), pos.getY(), pos.getZ(), worldName)) {
-            items = playerLoot.getInventory(pos.getX(), pos.getY(), pos.getZ(), worldName);
+        if (playerLoot != null && !playerLoot.isFirstTime(pos.x(), pos.y(), pos.z(), worldName)) {
+            items = playerLoot.getInventory(pos.x(), pos.y(), pos.z(), worldName);
         } else {
-            items = template.getTemplate(pos.getX(), pos.getY(), pos.getZ());
+            items = template.getTemplate(pos.x(), pos.y(), pos.z());
         }
 
         for (int i = 0; i < state.getItemContainer().getCapacity() && i < items.size(); i++) {

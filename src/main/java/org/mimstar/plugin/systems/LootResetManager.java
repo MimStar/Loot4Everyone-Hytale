@@ -55,7 +55,7 @@ public class LootResetManager {
                         PlayerLoot loot = holder.getComponent(Loot4Everyone.get().getPlayerLootcomponentType());
                         if (loot != null) {
                             resetAction.accept(loot);
-                            storage.save(uuid, holder).join();
+                            storage.save(uuid, holder,true).join();
                         }
                     }
                 } catch (Exception e) {

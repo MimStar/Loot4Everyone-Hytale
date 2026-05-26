@@ -32,6 +32,11 @@ public class ContainerMonitoringSystem extends EntityTickingSystem<EntityStore> 
                      @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
 
         commandBuffer.run(deferredStore -> {
+
+            if (index >= archetypeChunk.size()) {
+                return;
+            }
+
             Ref<EntityStore> playerRef = archetypeChunk.getReferenceTo(index);
             OpenedContainerComponent monitor = archetypeChunk.getComponent(index, containerComponentType);
             Player player = archetypeChunk.getComponent(index, Player.getComponentType());
