@@ -3,11 +3,10 @@ package org.mimstar.plugin.events;
 import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.DamageBlockEvent;
+import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
-import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
@@ -37,16 +36,8 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
             LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
             ChunkStore chunkStore = player.getWorld().getChunkStore();
-            long chunkIndex = ChunkUtil.indexChunkFromBlock(target.x(), target.z());
-            Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-            if (chunkRef == null) return;
-
-            BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-            if (blockComponentChunk == null) return;
-
-            int blockInColumnIndex = ChunkUtil.indexBlockInColumn(target.x(), target.y(), target.z());
-            Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+            Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(player.getWorld(), target.x(), target.y(), target.z());
 
             if (blockRef == null) return;
 
@@ -65,16 +56,8 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
             LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
             ChunkStore chunkStore = player.getWorld().getChunkStore();
-            long chunkIndex = ChunkUtil.indexChunkFromBlock(target.x(), target.z());
-            Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-            if (chunkRef == null) return;
-
-            BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-            if (blockComponentChunk == null) return;
-
-            int blockInColumnIndex = ChunkUtil.indexBlockInColumn(target.x(), target.y() + 1, target.z());
-            Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+            Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(player.getWorld(), target.x(), target.y() + 1, target.z());
 
             if (blockRef == null) return;
 
@@ -92,16 +75,8 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
             LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
             ChunkStore chunkStore = player.getWorld().getChunkStore();
-            long chunkIndex = ChunkUtil.indexChunkFromBlock(target.x(), target.z());
-            Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-            if (chunkRef == null) return;
-
-            BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-            if (blockComponentChunk == null) return;
-
-            int blockInColumnIndex = ChunkUtil.indexBlockInColumn(target.x() + 1, target.y() + 1, target.z());
-            Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+            Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(player.getWorld(), target.x() + 1, target.y() + 1, target.z());
 
             if (blockRef == null) return;
 
@@ -119,16 +94,8 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
             LootChestConfig lootChestConfig = player.getWorld().getChunkStore().getStore().getResource(Loot4Everyone.get().getLootChestConfigResourceType());
 
             ChunkStore chunkStore = player.getWorld().getChunkStore();
-            long chunkIndex = ChunkUtil.indexChunkFromBlock(target.x(), target.z());
-            Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-            if (chunkRef == null) return;
-
-            BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-            if (blockComponentChunk == null) return;
-
-            int blockInColumnIndex = ChunkUtil.indexBlockInColumn(target.x(), target.y() + 1, target.z() + 1);
-            Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+            Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(player.getWorld(), target.x(), target.y() + 1, target.z() + 1);
 
             if (blockRef == null) return;
 
@@ -148,16 +115,8 @@ public class DamageBlockEventListener extends EntityEventSystem<EntityStore, Dam
     private boolean isProtectedChest(Player player, int x, int y, int z) {
 
         ChunkStore chunkStore = player.getWorld().getChunkStore();
-        long chunkIndex = ChunkUtil.indexChunkFromBlock(x, z);
-        Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-        if (chunkRef == null) return false;
-
-        BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-        if (blockComponentChunk == null) return false;
-
-        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(x, y, z);
-        Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+        Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(player.getWorld(), x, y, z);
 
         if (blockRef == null) return false;
 

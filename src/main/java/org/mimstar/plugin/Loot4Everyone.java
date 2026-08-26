@@ -157,10 +157,10 @@ public class Loot4Everyone extends JavaPlugin {
             assert lootChestTemplate != null;
 
             if (itemContainerStateComponent.getDroplist() != null) {
-                WorldChunk wc = blockStateInfo.getChunkRef().getStore().getComponent(blockStateInfo.getChunkRef(), WorldChunk.getComponentType());
-                int x = ChunkUtil.xFromBlockInColumn(blockStateInfo.getIndex());
-                int y = ChunkUtil.yFromBlockInColumn(blockStateInfo.getIndex());
-                int z = ChunkUtil.zFromBlockInColumn(blockStateInfo.getIndex());
+                WorldChunk wc = blockStateInfo.getSectionRef().getStore().getComponent(blockStateInfo.getSectionRef(), WorldChunk.getComponentType());
+                int x = ChunkUtil.xFromIndex(blockStateInfo.getIndex());
+                int y = ChunkUtil.yFromIndex(blockStateInfo.getIndex());
+                int z = ChunkUtil.zFromIndex(blockStateInfo.getIndex());
                 int worldX = ChunkUtil.worldCoordFromLocalCoord(wc.getX(), x);
                 int worldZ = ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), z);
                 String droplist = itemContainerStateComponent.getDroplist();

@@ -3,14 +3,13 @@ package org.mimstar.plugin.events;
 import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.UseBlockEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.transaction.ClearTransaction;
+import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
 import com.hypixel.hytale.server.core.modules.item.ItemModule;
-import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
@@ -43,16 +42,8 @@ public class UseBlockEventPre extends EntityEventSystem<EntityStore, UseBlockEve
         Vector3i target = useBlockEventPre.getTargetBlock();
 
         ChunkStore chunkStore = player.getWorld().getChunkStore();
-        long chunkIndex = ChunkUtil.indexChunkFromBlock(target.x(), target.z());
-        Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-        if (chunkRef == null) return;
-
-        BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-        if (blockComponentChunk == null) return;
-
-        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(target.x(), target.y(), target.z());
-        Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+        Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(player.getWorld(), target.x(), target.y(), target.z());
 
         if (blockRef == null) return;
 

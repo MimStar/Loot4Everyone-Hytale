@@ -114,7 +114,7 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                     if (ref.isValid()) {
                         BlockModule.BlockStateInfo blockInfo = ref.getStore().getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
                         if (blockInfo != null) {
-                            Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
+                            Ref<ChunkStore> chunkRef = blockInfo.getSectionRef();
                             if (chunkRef.isValid()) {
                                 ItemContainerBlock itemContainerState = ref.getStore().getComponent(ref, ItemContainerBlock.getComponentType());
 
@@ -124,9 +124,9 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                     WorldChunk wc = chunkStore.getStore().getComponent(chunkRef,WorldChunk.getComponentType());
 
                                     Vector3i blockPosition = new Vector3i(
-                                            ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromBlockInColumn(blockInfo.getIndex())),
-                                            ChunkUtil.yFromBlockInColumn(blockInfo.getIndex()),
-                                            ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex()))
+                                            ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromIndex(blockInfo.getIndex())),
+                                            ChunkUtil.yFromIndex(blockInfo.getIndex()),
+                                            ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromIndex(blockInfo.getIndex()))
                                     );
 
                                     int x = blockPosition.x();
@@ -186,7 +186,7 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                             if (ref.isValid()) {
                                 BlockModule.BlockStateInfo blockInfo = ref.getStore().getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
                                 if (blockInfo != null) {
-                                    Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
+                                    Ref<ChunkStore> chunkRef = blockInfo.getSectionRef();
                                     if (chunkRef.isValid()) {
                                         ItemContainerBlock itemContainerState = ref.getStore().getComponent(ref, ItemContainerBlock.getComponentType());
 
@@ -195,9 +195,9 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                             WorldChunk wc = chunkStore.getStore().getComponent(chunkRef,WorldChunk.getComponentType());
 
                                             Vector3i blockPosition = new Vector3i(
-                                                    ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromBlockInColumn(blockInfo.getIndex())),
-                                                    ChunkUtil.yFromBlockInColumn(blockInfo.getIndex()),
-                                                    ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex()))
+                                                    ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromIndex(blockInfo.getIndex())),
+                                                    ChunkUtil.yFromIndex(blockInfo.getIndex()),
+                                                    ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromIndex(blockInfo.getIndex()))
                                             );
 
                                             int x = blockPosition.x();

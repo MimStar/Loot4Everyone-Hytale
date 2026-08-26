@@ -7,11 +7,13 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.playerdata.PlayerStorage;
 import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.chunk.BlockChunk;
 import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -45,16 +47,8 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
         }
 
         ChunkStore chunkStore = world.getChunkStore();
-        long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.x(), targetBlock.z());
-        Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-        if (chunkRef == null) return;
-
-        BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-        if (blockComponentChunk == null) return;
-
-        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.x(), targetBlock.y(), targetBlock.z());
-        Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+        Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(world, targetBlock.x(), targetBlock.y(), targetBlock.z());
 
         if (blockRef == null) return;
 

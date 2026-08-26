@@ -3,12 +3,11 @@ package org.mimstar.plugin.events;
 import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.PlaceBlockEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
-import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
@@ -49,16 +48,8 @@ public class PlaceBlockEventListener extends EntityEventSystem<EntityStore, Plac
     private boolean isProtectedChest(Player player, int x, int y, int z) {
 
         ChunkStore chunkStore = player.getWorld().getChunkStore();
-        long chunkIndex = ChunkUtil.indexChunkFromBlock(x, z);
-        Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-        if (chunkRef == null) return false;
-
-        BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-        if (blockComponentChunk == null) return false;
-
-        int blockInColumnIndex = ChunkUtil.indexBlockInColumn(x, y, z);
-        Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+        Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(player.getWorld(), x, y, z);
 
         if (blockRef == null) return false;
 

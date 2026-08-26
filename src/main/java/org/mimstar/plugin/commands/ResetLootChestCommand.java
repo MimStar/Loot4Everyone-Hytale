@@ -2,7 +2,6 @@ package org.mimstar.plugin.commands;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.NameMatching;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -10,12 +9,12 @@ import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalAr
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractAsyncCommand;
 import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
+import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.playerdata.PlayerStorage;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.TargetUtil;
@@ -86,16 +85,8 @@ public class ResetLootChestCommand extends AbstractAsyncCommand {
                 Vector3i targetBlock = TargetUtil.getTargetBlock(ref, 10.0, store);
 
                 ChunkStore chunkStore = finalWorld.getChunkStore();
-                long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.x(), targetBlock.z());
-                Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 
-                if (chunkRef == null) return;
-
-                BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
-                if (blockComponentChunk == null) return;
-
-                int blockInColumnIndex = ChunkUtil.indexBlockInColumn(targetBlock.x(), targetBlock.y(), targetBlock.z());
-                Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockInColumnIndex);
+                Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(finalWorld, targetBlock.x(), targetBlock.y(), targetBlock.z());
 
                 if (blockRef == null) return;
 

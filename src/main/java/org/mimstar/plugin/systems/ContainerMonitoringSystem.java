@@ -6,6 +6,7 @@ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.BlockComponentChunk;
@@ -44,29 +45,19 @@ public class ContainerMonitoringSystem extends EntityTickingSystem<EntityStore> 
             World world = player.getWorld();
             ChunkStore chunkStore = world.getChunkStore();
 
-            long chunkIndex = ChunkUtil.indexChunkFromBlock(monitor.getX(), monitor.getZ());
-            Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
+            Ref<ChunkStore> blockRef = BlockModule.getBlockEntity(world, monitor.getX(), monitor.getY(), monitor.getZ());
+            if (blockRef != null) {
 
-            if (chunkRef != null) {
-                BlockComponentChunk blockComponentChunk = chunkStore.getStore().getComponent(chunkRef, BlockComponentChunk.getComponentType());
+                ItemContainerBlock itemContainerBlock = chunkStore.getStore().getComponent(blockRef, ItemContainerBlock.getComponentType());
 
-                if (blockComponentChunk != null) {
-                    int blockIndex = ChunkUtil.indexBlockInColumn(monitor.getX(), monitor.getY(), monitor.getZ());
-                    Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockIndex);
+                if (itemContainerBlock != null) {
+                    boolean stillOpen = !itemContainerBlock.getWindows().isEmpty();
 
-                    if (blockRef != null) {
-                        ItemContainerBlock itemContainerBlock = chunkStore.getStore().getComponent(blockRef, ItemContainerBlock.getComponentType());
-
-                        if (itemContainerBlock != null) {
-                            boolean stillOpen = !itemContainerBlock.getWindows().isEmpty();
-
-                            if (!stillOpen) {
-                                handleContainerClosure(playerRef, monitor, player, itemContainerBlock, deferredStore, commandBuffer);
-                            }
-                        } else {
-                            commandBuffer.removeComponent(playerRef, containerComponentType);
-                        }
+                    if (!stillOpen) {
+                        handleContainerClosure(playerRef, monitor, player, itemContainerBlock, deferredStore, commandBuffer);
                     }
+                } else {
+                    commandBuffer.removeComponent(playerRef, containerComponentType);
                 }
             }
         });
