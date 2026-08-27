@@ -18,6 +18,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.ParticleUtil;
 import com.hypixel.hytale.server.core.universe.world.SoundUtil;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
+import com.hypixel.hytale.server.core.universe.world.chunk.section.ChunkSection;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.universe.world.worldgen.IWorldGen;
@@ -121,12 +122,12 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                 if (itemContainerState != null) {
                                     LootChestTemplate lootChestTemplate = world.getChunkStore().getStore().getResource(Loot4Everyone.get().getlootChestTemplateResourceType());
 
-                                    WorldChunk wc = chunkStore.getStore().getComponent(chunkRef,WorldChunk.getComponentType());
+                                    ChunkSection chunkSection = ref.getStore().getComponent(blockInfo.getSectionRef(), ChunkSection.getComponentType());
 
                                     Vector3i blockPosition = new Vector3i(
-                                            ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromIndex(blockInfo.getIndex())),
-                                            ChunkUtil.yFromIndex(blockInfo.getIndex()),
-                                            ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromIndex(blockInfo.getIndex()))
+                                            ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), ChunkUtil.xFromIndex(blockInfo.getIndex())),
+                                            ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), ChunkUtil.yFromIndex(blockInfo.getIndex())),
+                                            ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), ChunkUtil.zFromIndex(blockInfo.getIndex()))
                                     );
 
                                     int x = blockPosition.x();
@@ -192,12 +193,12 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
 
                                         if (itemContainerState != null) {
 
-                                            WorldChunk wc = chunkStore.getStore().getComponent(chunkRef,WorldChunk.getComponentType());
+                                            ChunkSection chunkSection = ref.getStore().getComponent(blockInfo.getSectionRef(), ChunkSection.getComponentType());
 
                                             Vector3i blockPosition = new Vector3i(
-                                                    ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromIndex(blockInfo.getIndex())),
-                                                    ChunkUtil.yFromIndex(blockInfo.getIndex()),
-                                                    ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromIndex(blockInfo.getIndex()))
+                                                    ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), ChunkUtil.xFromIndex(blockInfo.getIndex())),
+                                                    ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), ChunkUtil.yFromIndex(blockInfo.getIndex())),
+                                                    ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), ChunkUtil.zFromIndex(blockInfo.getIndex()))
                                             );
 
                                             int x = blockPosition.x();

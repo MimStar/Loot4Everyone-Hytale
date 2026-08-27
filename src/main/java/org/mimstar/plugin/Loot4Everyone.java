@@ -13,6 +13,8 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.block.BlockModule;import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
+import com.hypixel.hytale.server.core.universe.world.chunk.section.BlockSection;
+import com.hypixel.hytale.server.core.universe.world.chunk.section.ChunkSection;
 import com.hypixel.hytale.server.core.universe.world.events.StartWorldEvent;
 import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
@@ -157,17 +159,18 @@ public class Loot4Everyone extends JavaPlugin {
             assert lootChestTemplate != null;
 
             if (itemContainerStateComponent.getDroplist() != null) {
-                WorldChunk wc = blockStateInfo.getSectionRef().getStore().getComponent(blockStateInfo.getSectionRef(), WorldChunk.getComponentType());
+                ChunkSection chunkSection = commandBuffer.getComponent(blockStateInfo.getSectionRef(), ChunkSection.getComponentType());
                 int x = ChunkUtil.xFromIndex(blockStateInfo.getIndex());
                 int y = ChunkUtil.yFromIndex(blockStateInfo.getIndex());
                 int z = ChunkUtil.zFromIndex(blockStateInfo.getIndex());
-                int worldX = ChunkUtil.worldCoordFromLocalCoord(wc.getX(), x);
-                int worldZ = ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), z);
+                int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
+                int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
+                int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
                 String droplist = itemContainerStateComponent.getDroplist();
 
-                if (!lootChestTemplate.hasTemplate(worldX, y, worldZ)) {
+                if (!lootChestTemplate.hasTemplate(worldX, worldY, worldZ)) {
                     List<ItemStack> items = new ArrayList<>();
-                    lootChestTemplate.saveTemplate(worldX, y, worldZ, items, droplist);
+                    lootChestTemplate.saveTemplate(worldX, worldY, worldZ, items, droplist);
 
                     itemContainerStateComponent.setDroplist(null);
                 }
