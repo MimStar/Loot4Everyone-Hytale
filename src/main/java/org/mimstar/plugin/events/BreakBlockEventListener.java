@@ -150,11 +150,17 @@ public class BreakBlockEventListener extends EntityEventSystem<EntityStore, Brea
             if (targetRef != null && targetRef.isValid()) {
                 Ref<EntityStore> targetEntityRef = targetRef.getReference();
                 if (targetEntityRef != null && targetEntityRef.isValid()) {
-                    PlayerLoot component = store.getComponent(targetEntityRef,
-                            Loot4Everyone.get().getPlayerLootcomponentType());
-                    if (component != null) {
-                        resetAction.accept(component);
+                    try {
+                        PlayerLoot component = store.getComponent(targetEntityRef,
+                                Loot4Everyone.get().getPlayerLootcomponentType());
+                        if (component != null) {
+                            resetAction.accept(component);
+                        }
+                    } catch (IllegalStateException e) {
+                        offlinePlayers.add(uuid);
                     }
+                } else {
+                    offlinePlayers.add(uuid);
                 }
             } else {
                 offlinePlayers.add(uuid);
@@ -198,7 +204,6 @@ public class BreakBlockEventListener extends EntityEventSystem<EntityStore, Brea
         }
 
         if (batchFutures.isEmpty()) {
-            // All done
             return;
         }
 

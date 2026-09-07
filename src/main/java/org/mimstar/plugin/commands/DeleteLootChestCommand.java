@@ -82,7 +82,6 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
         }
 
         Consumer<PlayerLoot> resetAction = (playerLoot) -> {
-
             if (!playerLoot.isFirstTime(targetBlock.x(), targetBlock.y(), targetBlock.z(), worldName)) {
                 playerLoot.resetChest(targetBlock.x(), targetBlock.y(), targetBlock.z(), worldName);
             }
@@ -96,11 +95,17 @@ public class DeleteLootChestCommand extends AbstractPlayerCommand {
             if (targetRef != null && targetRef.isValid()) {
                 Ref<EntityStore> targetEntityRef = targetRef.getReference();
                 if (targetEntityRef != null && targetEntityRef.isValid()) {
-                    PlayerLoot component = store.getComponent(targetEntityRef, Loot4Everyone.get().getPlayerLootcomponentType());
-                    if (component != null) {
-                        resetAction.accept(component);
-                        //onlineProcessed++;
+                    try {
+                        PlayerLoot component = store.getComponent(targetEntityRef, Loot4Everyone.get().getPlayerLootcomponentType());
+                        if (component != null) {
+                            resetAction.accept(component);
+                            //onlineProcessed++;
+                        }
+                    } catch (IllegalStateException e) {
+                        offlinePlayers.add(uuid);
                     }
+                } else {
+                    offlinePlayers.add(uuid);
                 }
             } else {
                 offlinePlayers.add(uuid);
