@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.protocol.Color;
 import com.hypixel.hytale.protocol.SoundCategory;
+import com.hypixel.hytale.protocol.packets.interface_.EventTitleStyle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -17,7 +18,6 @@ import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.ParticleUtil;
 import com.hypixel.hytale.server.core.universe.world.SoundUtil;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.chunk.section.ChunkSection;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -166,7 +166,7 @@ public class LootChestRangeSystem extends EntityTickingSystem<EntityStore> {
                                             playerLoot.setDiscovered(x, y, z, world.getName(), true);
 
                                             if (lootChestConfig.isMessageAppear()){
-                                                EventTitleUtil.showEventTitleToPlayer(playerRef, Message.raw("New loot chest discovered!"), Message.raw(dropListName), true);
+                                                EventTitleUtil.showEventTitleToPlayer(playerRef, Message.raw("New loot chest discovered!"), Message.raw(dropListName), EventTitleStyle.Major);
                                                 int soundEventIndex = SoundEvent.getAssetMap().getIndex("SFX_Memories_Unlock_Local");
                                                 if (soundEventIndex > 0) {
                                                     SoundUtil.playSoundEvent2dToPlayer(playerRef, soundEventIndex, SoundCategory.SFX);
